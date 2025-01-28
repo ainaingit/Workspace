@@ -1,29 +1,24 @@
-CREATE OR REPLACE VIEW workspace_availability AS
+DROP VIEW IF EXISTS reservation_details;
+
+CREATE OR REPLACE VIEW reservation_details AS
 SELECT
-    w.id AS workspace_id,
-    w.name AS workspace_nom,
-    h.heure AS heure,
-    COALESCE(DATE(r.end_time), CURRENT_DATE) AS date_reservation, -- Colonne date extraite de r.end_time
-    CASE
-        WHEN r.id IS NOT NULL THEN
-            CASE
-                WHEN r.status = 'PAYE' THEN 'occupé'
-                WHEN r.status = 'A_PAYER' THEN 'réservé'
-                WHEN r.status = 'EN_ATTENTE' THEN 'en attente'
-                ELSE 'occupé'
-                END
-        ELSE 'libre'
-        END AS statut
+    r.id AS reservation_id,
+    r.date AS reservation_date,
+    r.start_hour AS start_hour,
+    r.start_hour + r.duration AS end_hour,  -- Heure de fin calculée en fonction de l'heure de début et de la durée
+    r.duration AS duration,
+    -- Calcul du montant total en additionnant le prix de l'espace et des options
+    (w.price + COALESCE(SUM(o.price), 0)) AS total_amount,
+    r.status AS status,  -- Statut directement récupéré de la table reservation
+    -- Utilisation de STRING_AGG pour concaténer les noms des options
+    STRING_AGG(o.name, ', ' ORDER BY o.name) AS options_names,
+    r.client_id AS client_id  -- Ajouter l'ID du client
 FROM
-    generate_series(8, 17) AS h(heure) -- Génère les heures de 8h à 17h
-        CROSS JOIN
-    workspace w
-        LEFT JOIN
     reservation r
-    ON
-        w.id = r.workspace_id
-            AND DATE(r.end_time) = CURRENT_DATE -- Remplace par une date dynamique si nécessaire
-            AND h.heure >= EXTRACT(HOUR FROM r.start_time)
-            AND h.heure < EXTRACT(HOUR FROM r.end_time);
+        JOIN workspace w ON r.workspace_id = w.id  -- Joindre les informations de l'espace de travail
+        LEFT JOIN reservation_option ro ON r.id = ro.reservation_id  -- Joindre les options de la réservation
+        LEFT JOIN option o ON ro.option_id = o.id  -- Joindre les options
+GROUP BY
+    r.id, r.date, r.start_hour, r.duration, w.price, r.status, r.client_id;
 
 

@@ -69,7 +69,7 @@
 <div class="sidebar">
     <h3 class="text-center text-white">Menu Client</h3>
     <a href="/client/espaces-travail" class="btn btn-light btn-custom">Liste des espaces de travail</a>
-    <a href="/client/reservations" class="btn btn-light btn-custom">Mes réservations</a>
+    <a href="/mesreservation" class="btn btn-light btn-custom">Mes réservations</a>
 </div>
 
 <!-- Content -->
