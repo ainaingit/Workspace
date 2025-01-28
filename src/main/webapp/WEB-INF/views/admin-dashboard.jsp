@@ -46,7 +46,7 @@
 <!-- Sidebar -->
 <div class="sidebar">
     <h3 class="text-center text-white">Menu Admin</h3>
-    <a href="importerdonnées.jsp" class="btn btn-light">Importer les données</a>
+    <a href="/importerdonnees" class="btn btn-light">Importer les données</a>
     <a href="/admin/valider-paiement" class="btn btn-light">Valider les paiements</a>
     <a href="/admin/statistiques" class="btn btn-light">Statistiques</a>
 </div>

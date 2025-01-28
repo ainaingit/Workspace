@@ -1,3 +1,5 @@
+<%@ page import="com.example.workspace.entity.Workspace" %>
+<%@ page import="java.util.List" %>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -48,6 +50,17 @@
             font-family: 'Arial', sans-serif;
             color: #343a40;
         }
+        .table-container {
+            margin-top: 30px;
+        }
+        .bg-danger {
+            background-color: red !important;
+            color: white;
+        }
+        .bg-success {
+            background-color: green !important;
+            color: white;
+        }
     </style>
 </head>
 <body>
@@ -63,8 +76,73 @@
 <div class="content">
     <h1 class="text-center">Tableau de bord Client</h1>
     <p class="text-center">Bienvenue dans votre espace client. Sélectionnez une option dans le menu à gauche pour gérer vos espaces de travail et réservations.</p>
+
+    <!-- Formulaire de sélection de date -->
+    <div class="text-center mt-4">
+        <h3>Sélectionner une date pour voir la disponibilité des espaces</h3>
+        <form id="dateForm" class="form-inline justify-content-center">
+            <div class="form-group">
+                <label for="date" class="mr-2">Date :</label>
+                <input type="date" id="date" name="date" class="form-control" required>
+            </div>
+            <button type="button" id="submitDate" class="btn btn-primary ml-3">Voir les Espaces</button>
+        </form>
+    </div>
+
+    <!-- Tableau des espaces de travail -->
+    <div class="table-container" id="workspaceTable">
+        <table class="table table-bordered mt-4">
+            <thead>
+            <tr>
+                <th>Espaces de Travail</th>
+                <th>8h</th>
+                <th>9h</th>
+                <th>10h</th>
+                <th>11h</th>
+                <th>12h</th>
+                <th>13h</th>
+                <th>14h</th>
+                <th>15h</th>
+                <th>16h</th>
+                <th>17h</th>
+                <th>18h</th>
+                <th>!</th>
+            </tr>
+            </thead>
+            <tbody>
+            <%
+                // Supposons que vous ayez une liste d'espaces dans le modèle
+                List<Workspace> espacesDeTravail = (List<Workspace>) request.getAttribute("liste_workspace");
+                for (int i = 0; i < espacesDeTravail.size(); i++) {
+                    Workspace espace = espacesDeTravail.get(i);
+            %>
+            <tr>
+                <td><%= espace.getName() %></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>
+                    <form action="/reserver" method="POST">
+                        <input type="hidden" name="workspaceId" value="<%= espace.getId() %>" />
+                        <input type="hidden" name="workspaceName" value="<%= espace.getName() %>" />  <!-- Ajoute ici une autre valeur -->
+                        <button type="submit">Réserver</button>
+                    </form>
+                </td>
+
+            </tr>
+            <% } %>
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
