@@ -2,8 +2,12 @@ package com.example.workspace.controller;
 
 import com.example.workspace.entity.Admin;
 import com.example.workspace.entity.Client;
+import com.example.workspace.entity.Reservation;
+import com.example.workspace.entity.Workspace;
 import com.example.workspace.repository.AdminRepository;
 import com.example.workspace.repository.ClientRepository;
+import com.example.workspace.repository.ReservationRepository;
+import com.example.workspace.repository.WorkspaceRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -12,12 +16,19 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.util.List;
+
 @Controller
 public class LoginController {
     @Autowired
     private AdminRepository adminRepository;
     @Autowired
     private ClientRepository clientRepository;
+
+    @Autowired
+    private WorkspaceRepository workspaceRepository;
+
+
 
     @GetMapping("/")
     public String index() { return "index"; }
@@ -30,6 +41,8 @@ public class LoginController {
 
     @GetMapping("/client-dashboard")
     public String clientDashboard(Model model) {
+        List<Workspace> liste_workspace = workspaceRepository.findAll() ;
+        model.addAttribute("liste_workspace", liste_workspace);
         // Vous pouvez ajouter des attributs au modèle ici, si nécessaire
         return "client-dashboard"; // Assurez-vous que ce fichier JSP ou template existe
     }
@@ -81,6 +94,8 @@ public class LoginController {
 
             if (client != null) {
                 // Si le client est trouvé, créer une session et rediriger vers le dashboard du client
+
+
                 session.setAttribute("clientId", client.getId());
                 return "redirect:/client-dashboard"; // Redirection vers le dashboard du client
             } else {
