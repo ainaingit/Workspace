@@ -1,6 +1,7 @@
 package com.example.workspace.controller;
 
 import com.example.workspace.entity.*;
+import com.example.workspace.objet.ReservationDetails;
 import com.example.workspace.repository.*;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,8 @@ public class ClientController {
     @Autowired
     private ReservationOptionRepository reservationOptionRepository;
 
+    @Autowired
+    private ReservationDetailsRepository reservationDetailsRepository;
     @PostMapping("/reserver")
     public String reserveWorkspace(@RequestParam("workspaceId") Long workspaceId,
                                    @RequestParam("workspaceName") String workspacename,
@@ -79,5 +82,13 @@ public class ClientController {
         return "reservationConfirmation";  // Vue de confirmation de réservation
     }
 
-
+    @GetMapping("/mesreservation")
+    public String mesreservation( HttpSession session, Model model) {
+        Long idclient  = (Long) session.getAttribute("clientId");
+        System.out.println(idclient + " huhu ");
+        List<ReservationDetails> reservations = reservationDetailsRepository.findByClientId(idclient);
+        System.out.println(reservations.size() + " reservations");
+        model.addAttribute("reservations", reservations);
+        return "mesreservations";
+    }
 }
