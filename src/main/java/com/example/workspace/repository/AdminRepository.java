@@ -1,0 +1,10 @@
+package com.example.workspace.repository;
+
+import com.example.workspace.entity.Admin;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+@Repository
+public interface AdminRepository  extends JpaRepository<Admin, Long> {
+    Admin findByNom(String username);
+}
