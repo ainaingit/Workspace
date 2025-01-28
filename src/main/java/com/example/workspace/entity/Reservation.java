@@ -99,4 +99,14 @@ public class Reservation {
     public int getEndHour() {
         return startHour + duration;
     }
+
+    public Reservation(LocalDate date, int startHour, int duration, Workspace workspace, Client client) {
+        this.setDate(date);
+        this.setStartHour(startHour);
+        this.setEndHour(startHour+duration);
+        this.setDuration(duration);
+        this.setStatus(ReservationStatus.valueOf("A_PAYER"));
+        this.setWorkspace(workspace);
+        this.setClient(client);
+    }
 }

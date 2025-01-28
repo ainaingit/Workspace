@@ -19,6 +19,11 @@ public class ReservationOption {
 
     public ReservationOption() {}
 
+    public ReservationOption(Reservation reservationId, Option byId) {
+        this.setReservation(reservationId);
+        this.setOption(byId);
+    }
+
     // Getters et setters
     public Long getId() {
         return id;

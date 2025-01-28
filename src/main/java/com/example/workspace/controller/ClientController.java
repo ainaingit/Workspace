@@ -1,11 +1,8 @@
 package com.example.workspace.controller;
 
-import com.example.workspace.entity.Option;
-import com.example.workspace.entity.Reservation;
-import com.example.workspace.entity.Workspace;
-import com.example.workspace.repository.OptionRepository;
-import com.example.workspace.repository.ReservationRepository;
-import com.example.workspace.repository.WorkspaceRepository;
+import com.example.workspace.entity.*;
+import com.example.workspace.repository.*;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -27,6 +24,11 @@ public class ClientController {
     @Autowired
     private ReservationRepository reservationRepository;
 
+    @Autowired
+    private ClientRepository clientRepository;
+
+    @Autowired
+    private ReservationOptionRepository reservationOptionRepository;
 
     @PostMapping("/reserver")
     public String reserveWorkspace(@RequestParam("workspaceId") Long workspaceId,
@@ -45,31 +47,35 @@ public class ClientController {
                                      @RequestParam("startHour") String startHour,  // Heure sous forme de String
                                      @RequestParam("duration") int duration,  // Durée sous forme d'entier
                                      @RequestParam("option") Long[] optionIds,  // Tableau d'ID d'options sélectionnées
+                                     HttpSession session,
                                      Model model) {
 
         // Conversion de la date en type LocalDate
         LocalDate date = LocalDate.parse(reservationDate);
         int startHourInt = Integer.parseInt(startHour);  // Convertir l'heure de début en entier
 
-        // Créer une nouvelle réservation
-        Reservation reservation = new Reservation();
-        reservation.setWorkspace(workspaceRepository.findById(workspaceId).orElse(null));
-        reservation.setDate(date);
-        reservation.setStartHour(startHourInt);
-        reservation.setDuration(duration);
+        // prendre la session du client
+        Long sessionclient = (Long) session.getAttribute("clientId");
 
+        // prendre les workspace et le client
+        Workspace workspace = workspaceRepository.findById(workspaceId).get();
+        Client client  = clientRepository.findById(sessionclient).get();
 
-        // Si des options ont été sélectionnées, les ajouter à la réservation
-        if (optionIds != null && optionIds.length > 0) {
+        // create a reservation
+        Reservation reservation = new Reservation(date,startHourInt,duration,workspace,client);
+        // Sauvegarder la réservation en base de données
+        reservation = reservationRepository.save(reservation);  // Ici, l'ID sera généré automatiquement
 
-            for (int i = 0; i < optionIds.length; i++) {
-                System.out.println(optionIds[i]);
-            }
+        // Récupérer l'ID généré pour la réservation
+        Long reservationId = reservation.getId();
+        System.out.println("Reservation ID: " + reservationId);
+
+        for (Long optionId : optionIds) {
+            ReservationOption resopt = new ReservationOption(reservation,optionRepository.findById(optionId).get());
+            reservationOptionRepository.save(resopt);
         }
 
-
-        // Ajouter les informations à la vue ou rediriger vers une autre page
-        model.addAttribute("reservation", reservation);
+        System.out.println("Reservayion et Option reservation inserer ");
         return "reservationConfirmation";  // Vue de confirmation de réservation
     }
 
