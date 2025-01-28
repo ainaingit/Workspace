@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord Client</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            display: flex;
+            min-height: 100vh;
+            background-color: #e9ecef;
+        }
+        .sidebar {
+            width: 250px;
+            background-color: #6c757d;
+            color: white;
+            padding-top: 30px;
+            position: fixed;
+            height: 100%;
+            border-radius: 0 15px 15px 0;
+        }
+        .sidebar a {
+            color: white;
+            text-decoration: none;
+            display: block;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .sidebar a:hover {
+            background-color: #495057;
+        }
+        .content {
+            margin-left: 270px;
+            padding: 30px;
+            flex: 1;
+            background-color: #f8f9fa;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .btn-custom {
+            width: 200px;
+            margin: 10px 0;
+        }
+        h1 {
+            font-family: 'Arial', sans-serif;
+            color: #343a40;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+    <h3 class="text-center text-white">Menu Client</h3>
+    <a href="/client/espaces-travail" class="btn btn-light btn-custom">Liste des espaces de travail</a>
+    <a href="/client/reservations" class="btn btn-light btn-custom">Mes réservations</a>
+</div>
+
+<!-- Content -->
+<div class="content">
+    <h1 class="text-center">Tableau de bord Client</h1>
+    <p class="text-center">Bienvenue dans votre espace client. Sélectionnez une option dans le menu à gauche pour gérer vos espaces de travail et réservations.</p>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
