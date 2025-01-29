@@ -5,6 +5,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "reservation_details")  // Le nom de ta vue dans la base de données
@@ -13,8 +14,8 @@ public class ReservationDetails {
     @Id
     private Long reservationId;
     private LocalDate reservationDate;
-    private int startHour;
-    private int endHour;
+    private LocalTime startHour;
+    private LocalTime endHour;
     private int duration;
     private double totalAmount;
     private String status;
@@ -22,7 +23,6 @@ public class ReservationDetails {
     private Long clientId;
     private String workspaceName;  // Ajout du champ workspaceName
 
-    // Getters et setters
     public Long getReservationId() {
         return reservationId;
     }
@@ -39,19 +39,19 @@ public class ReservationDetails {
         this.reservationDate = reservationDate;
     }
 
-    public int getStartHour() {
+    public LocalTime getStartHour() {
         return startHour;
     }
 
-    public void setStartHour(int startHour) {
+    public void setStartHour(LocalTime startHour) {
         this.startHour = startHour;
     }
 
-    public int getEndHour() {
+    public LocalTime getEndHour() {
         return endHour;
     }
 
-    public void setEndHour(int endHour) {
+    public void setEndHour(LocalTime endHour) {
         this.endHour = endHour;
     }
 

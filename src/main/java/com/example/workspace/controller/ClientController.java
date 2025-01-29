@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 @Controller
@@ -55,8 +56,8 @@ public class ClientController {
 
         // Conversion de la date en type LocalDate
         LocalDate date = LocalDate.parse(reservationDate);
-        int startHourInt = Integer.parseInt(startHour);  // Convertir l'heure de début en entier
-
+        LocalTime startHourInt = LocalTime.of(Integer.parseInt(startHour), 0);;  // Convertir l'heure de début en entier
+        LocalTime endtime  = startHourInt.plusHours(duration);
         // prendre la session du client
         Long sessionclient = (Long) session.getAttribute("clientId");
 
@@ -64,22 +65,35 @@ public class ClientController {
         Workspace workspace = workspaceRepository.findById(workspaceId).get();
         Client client  = clientRepository.findById(sessionclient).get();
 
-        // create a reservation
-        Reservation reservation = new Reservation(date,startHourInt,duration,workspace,client);
-        // Sauvegarder la réservation en base de données
-        reservation = reservationRepository.save(reservation);  // Ici, l'ID sera généré automatiquement
+        // verifier si le creneau est libre
+        boolean boolea  = true;
+        if(!reservationRepository.findConflictingReservations(date, startHourInt, endtime).isEmpty()) boolea = false;
+        System.out.println("tonga eto ");
+        // logique si y a un conflit
+        if (boolea){
+            // create a reservation
+            System.out.println("aonaaaaa oa ");
+            Reservation reservation = new Reservation(date,startHourInt,duration,workspace,client);
+            System.out.println("aonaaaaa");
+            // Sauvegarder la réservation en base de données
+            reservation = reservationRepository.save(reservation);  // Ici, l'ID sera généré automatiquement
 
-        // Récupérer l'ID généré pour la réservation
-        Long reservationId = reservation.getId();
-        System.out.println("Reservation ID: " + reservationId);
+            // Récupérer l'ID généré pour la réservation
+            Long reservationId = reservation.getId();
+            System.out.println("Reservation ID: " + reservationId);
 
-        for (Long optionId : optionIds) {
-            ReservationOption resopt = new ReservationOption(reservation,optionRepository.findById(optionId).get());
-            reservationOptionRepository.save(resopt);
+            for (Long optionId : optionIds) {
+                ReservationOption resopt = new ReservationOption(reservation,optionRepository.findById(optionId).get());
+                reservationOptionRepository.save(resopt);
+            }
+
+            System.out.println("Reservayion et Option reservation inserer ");
+            return "reservationConfirmation";  // Vue de confirmation de réservation
         }
-
-        System.out.println("Reservayion et Option reservation inserer ");
-        return "reservationConfirmation";  // Vue de confirmation de réservation
+        else{
+            model.addAttribute("Erreur","Erreur be ");
+            return "reservation";
+        }
     }
 
     @GetMapping("/mesreservation")
@@ -91,4 +105,25 @@ public class ClientController {
         model.addAttribute("reservations", reservations);
         return "mesreservations";
     }
+
+    @PostMapping("/annulerReservation")
+    public String annulerReservation( @RequestParam("reservationId") Long idReservation,
+                                       Model model) {
+        reservationRepository.deleteById(idReservation);
+        System.out.println("Reservation deleted");
+        return "annulerReservation";
+    }
+
+    @PostMapping("/payerReservation")
+    public String payerReservation( @RequestParam("reservationId") Long idReservation,
+                                      Model model) {
+        Reservation reservation = reservationRepository.findById(idReservation).get();
+        ReservationDetails reservationDetails = reservationDetailsRepository.findById(idReservation).get();
+        model.addAttribute("reservation", reservation);
+        model.addAttribute("reservationDetails", reservationDetails);
+        return "payerReservation";
+    }
+
+  /*  @PostMapping("/traitementPayerReservation")
+    public String payerunereservation()*/
 }

@@ -1,6 +1,12 @@
 package com.example.workspace.entity;
 
 import jakarta.persistence.*;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+
+import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -11,8 +17,7 @@ public class Workspace {
     private Long id;
 
     private String name;  // Nom de l'espace de travail
-    private int capacity; // Capacité maximale
-
+    private int price ;
     // Relation avec les réservations
     @OneToMany(mappedBy = "workspace")
     private List<Reservation> reservations;
@@ -36,12 +41,12 @@ public class Workspace {
         this.name = name;
     }
 
-    public int getCapacity() {
-        return capacity;
+    public int getPrice() {
+        return price;
     }
 
-    public void setCapacity(int capacity) {
-        this.capacity = capacity;
+    public void setPrice(int price) {
+        this.price = price;
     }
 
     public List<Reservation> getReservations() {
@@ -50,5 +55,34 @@ public class Workspace {
 
     public void setReservations(List<Reservation> reservations) {
         this.reservations = reservations;
+    }
+
+
+    public static List<Workspace> parseCSV(InputStream inputStream) {
+        List<Workspace> workspaces = new ArrayList<>();
+
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+             CSVParser csvParser = new CSVParser(
+                     fileReader,
+                     CSVFormat.DEFAULT
+                             .withFirstRecordAsHeader() // Ignore la première ligne comme en-tête
+                             .withIgnoreHeaderCase()    // Ignorer la casse des noms de colonnes
+                             .withTrim()                // Supprimer les espaces inutiles
+             )) {
+
+            // Parcourir les lignes suivantes
+            for (CSVRecord csvRecord : csvParser) {
+                Workspace workspace = new Workspace() ;
+                workspace.setName(csvRecord.get("nom"));              // Utiliser les noms d'en-têtes
+                workspace.setPrice(Integer.parseInt(csvRecord.get("prix_heure")));
+
+                workspaces.add(workspace);
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors de la lecture du fichier CSV : " + e.getMessage());
+        }
+
+        return workspaces;
     }
 }
