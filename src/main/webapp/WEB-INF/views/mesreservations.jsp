@@ -48,14 +48,14 @@
             <td><%= res.getStatus()%></td>
             <td>
                 <!-- Formulaire pour le paiement avec l'ID de la réservation -->
-                <form action="Payer" method="post">
+                <form action="/payerReservation" method="post">
                     <input type="hidden" name="reservationId" value="<%= res.getReservationId() %>">
                     <button type="submit">Payer</button>
                 </form>
             </td>
             <td>
                 <!-- Formulaire pour annuler avec l'ID de la réservation -->
-                <form action="Annuler" method="post">
+                <form action="/annulerReservation" method="post">
                     <input type="hidden" name="reservationId" value="<%= res.getReservationId() %>">
                     <button type="submit">Annuler</button>
                 </form>

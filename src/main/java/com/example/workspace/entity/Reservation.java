@@ -1,9 +1,20 @@
 package com.example.workspace.entity;
 
+import com.example.workspace.repository.ClientRepository;
+import com.example.workspace.repository.OptionRepository;
+import com.example.workspace.repository.ReservationRepository;
+import com.example.workspace.repository.WorkspaceRepository;
 import jakarta.persistence.*;
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 
-import java.sql.Date;
+import java.io.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Reservation {
@@ -14,9 +25,9 @@ public class Reservation {
 
     @Column(nullable = false)
     private LocalDate date;  // Date de la réservation (date sans heure)
-
-    private int startHour;   // Heure de début de la réservation (en entier, ex: 8 pour 8h)
-    private int endHour;   // Heure de début de la réservation (en entier, ex: 8 pour 8h)
+    private String ref ;
+    private LocalTime startHour;   // Heure de début de la réservation (en entier, ex: 8 pour 8h)
+    private LocalTime endHour;   // Heure de début de la réservation (en entier, ex: 8 pour 8h)
     private int duration;     // Durée de la réservation en heures
 
     @Enumerated(EnumType.STRING)
@@ -30,6 +41,9 @@ public class Reservation {
     @ManyToOne
     @JoinColumn(name = "client_id")
     private Client client;  // Le client qui a effectué la réservation
+
+    @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ReservationOption> options;
 
     public Reservation() {}
 
@@ -51,12 +65,16 @@ public class Reservation {
     }
 
 
-    public int getStartHour() {
+    public LocalTime getStartHour() {
         return startHour;
     }
 
-    public void setStartHour(int startHour) {
+    public void setStartHour(LocalTime startHour) {
         this.startHour = startHour;
+    }
+
+    public LocalTime getEndHour() {
+        return endHour;
     }
 
     public int getDuration() {
@@ -75,6 +93,14 @@ public class Reservation {
         this.status = status;
     }
 
+    public String getRef() {
+        return ref;
+    }
+
+    public void setRef(String ref) {
+        this.ref = ref;
+    }
+
     public Workspace getWorkspace() {
         return workspace;
     }
@@ -83,7 +109,7 @@ public class Reservation {
         this.workspace = workspace;
     }
 
-    public void setEndHour(int endHour) {
+    public void setEndHour(LocalTime endHour) {
         this.endHour = endHour;
     }
 
@@ -95,18 +121,77 @@ public class Reservation {
         this.client = client;
     }
 
-    // Calcul de l'heure de fin en fonction de l'heure de début et de la durée
-    public int getEndHour() {
-        return startHour + duration;
+    public List<ReservationOption> getOptions() {
+        return options;
     }
 
-    public Reservation(LocalDate date, int startHour, int duration, Workspace workspace, Client client) {
+    public void setOptions(List<ReservationOption> options) {
+        this.options = options;
+    }
+
+    public Reservation(LocalDate date, LocalTime startHour, int duration, Workspace workspace, Client client) {
         this.setDate(date);
         this.setStartHour(startHour);
-        this.setEndHour(startHour+duration);
+        this.setEndHour(startHour.plusHours(duration));
         this.setDuration(duration);
         this.setStatus(ReservationStatus.valueOf("A_PAYER"));
         this.setWorkspace(workspace);
         this.setClient(client);
     }
+
+
+    public static List<Reservation> parseCSV(InputStream inputStream,
+                                             WorkspaceRepository workspaceRepository,
+                                             ClientRepository clientRepository,
+                                             OptionRepository optionRepository) {  // Ajouter l'OptionRepository pour trouver les options
+        List<Reservation> reservations = new ArrayList<>();
+        // Définir le format de la date
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        try (BufferedReader fileReader = new BufferedReader(new InputStreamReader(inputStream, "UTF-8"));
+             CSVParser csvParser = new CSVParser(
+                     fileReader,
+                     CSVFormat.DEFAULT
+                             .withFirstRecordAsHeader()  // Ignore la première ligne comme en-tête
+                             .withIgnoreHeaderCase()     // Ignorer la casse des noms de colonnes
+                             .withTrim()                 // Supprimer les espaces inutiles
+             )) {
+
+            // Parcourir les lignes suivantes
+            for (CSVRecord csvRecord : csvParser) {
+                Reservation reservation = new Reservation();
+                // Utiliser les noms d'en-têtes pour peupler l'objet Reservation
+                reservation.setRef(csvRecord.get("ref"));
+                reservation.setWorkspace(workspaceRepository.findByName(csvRecord.get("espace")));
+                reservation.setClient(clientRepository.findByNumber(csvRecord.get("client")));
+                reservation.setDate(LocalDate.parse(csvRecord.get("date"),formatter));
+                reservation.setStartHour(LocalTime.parse(csvRecord.get("heure_debut")));
+                reservation.setDuration(Integer.parseInt(csvRecord.get("duree")));
+                reservation.setEndHour(reservation.getStartHour().plusHours(Integer.parseInt(csvRecord.get("duree"))));
+                reservation.setStatus(ReservationStatus.valueOf("A_PAYER"));
+
+                // Traiter les options (ex: "opt1, opt3")
+                String optionsColumn = csvRecord.get("option");  // Colonne des options
+                List<ReservationOption> reservationOptions = new ArrayList<>();
+
+                if (optionsColumn != null && !optionsColumn.isBlank()) {
+                    for (String optionName : optionsColumn.split(",")) {
+                        Option option = optionRepository.findByCode(optionName.trim().toUpperCase()); // Trouver l'option par code
+                        if (option != null) {
+                            reservationOptions.add(new ReservationOption(reservation, option)); // Ajouter l'option à la liste
+                        }
+                    }
+                }
+
+                reservation.setOptions(reservationOptions); // Assigner la liste (vide si aucune option valide)
+
+
+                reservations.add(reservation);  // Ajouter la réservation à la liste
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return reservations;
+    }
+
 }

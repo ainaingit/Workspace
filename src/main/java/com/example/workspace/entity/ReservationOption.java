@@ -17,12 +17,7 @@ public class ReservationOption {
     @JoinColumn(name = "option_id")
     private Option option;  // L'option choisie
 
-    public ReservationOption() {}
 
-    public ReservationOption(Reservation reservationId, Option byId) {
-        this.setReservation(reservationId);
-        this.setOption(byId);
-    }
 
     // Getters et setters
     public Long getId() {
@@ -47,5 +42,12 @@ public class ReservationOption {
 
     public void setOption(Option option) {
         this.option = option;
+    }
+
+    public ReservationOption() {}
+
+    public ReservationOption(Reservation reservationId, Option byId) {
+        this.setReservation(reservationId);
+        this.setOption(byId);
     }
 }
