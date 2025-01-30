@@ -1,4 +1,4 @@
-package com.example.workspace.objet;
+package com.example.workspace.vue;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;

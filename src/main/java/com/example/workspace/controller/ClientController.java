@@ -1,7 +1,7 @@
 package com.example.workspace.controller;
 
 import com.example.workspace.entity.*;
-import com.example.workspace.objet.ReservationDetails;
+import com.example.workspace.vue.ReservationDetails;
 import com.example.workspace.repository.*;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,16 +96,6 @@ public class ClientController {
         }
     }
 
-    @GetMapping("/mesreservation")
-    public String mesreservation( HttpSession session, Model model) {
-        Long idclient  = (Long) session.getAttribute("clientId");
-        System.out.println(idclient + " huhu ");
-        List<ReservationDetails> reservations = reservationDetailsRepository.findByClientId(idclient);
-        System.out.println(reservations.size() + " reservations");
-        model.addAttribute("reservations", reservations);
-        return "mesreservations";
-    }
-
     @PostMapping("/annulerReservation")
     public String annulerReservation( @RequestParam("reservationId") Long idReservation,
                                        Model model) {
@@ -124,6 +114,24 @@ public class ClientController {
         return "payerReservation";
     }
 
-  /*  @PostMapping("/traitementPayerReservation")
-    public String payerunereservation()*/
+    @PostMapping("/traitementPayerReservation")
+    public String payerunereservation(@RequestParam("mode") String mode,@RequestParam("reservationId") Long idres){
+        Reservation reservation = reservationRepository.findById(idres).get();
+        // mobl amila updatena le reservation.status ho lasa En attente
+        Payment payment = new Payment();
+        payment.setReservation(reservation);
+        payment.setMode_payment(mode);
+
+        return "traitementPayerReservation";
+    }
+
+    @GetMapping("/mesreservation")
+    public String mesreservation( HttpSession session, Model model) {
+        Long idclient  = (Long) session.getAttribute("clientId");
+        System.out.println(idclient + " huhu ");
+        List<ReservationDetails> reservations = reservationDetailsRepository.findByClientId(idclient);
+        System.out.println(reservations.size() + " reservations");
+        model.addAttribute("reservations", reservations);
+        return "mesreservations";
+    }
 }
