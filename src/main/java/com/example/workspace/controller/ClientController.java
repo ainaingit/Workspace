@@ -34,6 +34,9 @@ public class ClientController {
 
     @Autowired
     private ReservationDetailsRepository reservationDetailsRepository;
+    @Autowired
+    private PaymentRepository paymentRepository;
+
     @PostMapping("/reserver")
     public String reserveWorkspace(@RequestParam("workspaceId") Long workspaceId,
                                    @RequestParam("workspaceName") String workspacename,
@@ -115,15 +118,22 @@ public class ClientController {
     }
 
     @PostMapping("/traitementPayerReservation")
-    public String payerunereservation(@RequestParam("mode") String mode,@RequestParam("reservationId") Long idres){
-        Reservation reservation = reservationRepository.findById(idres).get();
-        // mobl amila updatena le reservation.status ho lasa En attente
-        Payment payment = new Payment();
-        payment.setReservation(reservation);
-        payment.setMode_payment(mode);
+    public String payerunereservation(@RequestParam("mode") String mode, @RequestParam("reservationId") Long idres) {
+        // Charger la réservation par son ID
+        Reservation reservation = reservationRepository.findById(idres).orElse(null);
+
+        if (reservation != null) {
+            // Mettre à jour le statut de la réservation
+            reservation.setStatus(ReservationStatus.EN_ATTENTE);
+
+            // Sauvegarder la réservation mise à jour
+            reservationRepository.save(reservation);
+
+        }
 
         return "traitementPayerReservation";
     }
+
 
     @GetMapping("/mesreservation")
     public String mesreservation( HttpSession session, Model model) {
@@ -133,5 +143,24 @@ public class ClientController {
         System.out.println(reservations.size() + " reservations");
         model.addAttribute("reservations", reservations);
         return "mesreservations";
+    }
+
+    @PostMapping("/processPayment")
+    public String processPayment(@RequestParam("reservationId")Long id ,
+                                 @RequestParam("mode") String mode,
+                                 HttpSession session,
+                                 Model model) {
+        Reservation reservation = reservationRepository.findById(id).get();
+        reservation.setStatus(ReservationStatus.EN_ATTENTE);
+        System.out.println("tonga ato re ah ");
+        Payment payment = new Payment();
+        payment.setMode_payment(mode);
+        payment.setReservation(reservation);
+        payment.setRef_payment(Payment.generateRef());
+        payment.setRef_reservation(reservation.getRef());
+        payment.setStatut(String.valueOf(reservation.getStatus()));
+
+        paymentRepository.save(payment) ;
+        return "huhu";
     }
 }

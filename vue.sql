@@ -33,3 +33,16 @@ GROUP BY rd.reservation_date
 ORDER BY rd.reservation_date;
 
 SELECT * from  v_chiffre_affaire_par_jour ;
+
+*****************************/
+
+CREATE OR REPLACE VIEW vue_chiffre_affaire_total AS
+SELECT
+    SUM(CASE WHEN r.status IN ('FAIT', 'PAYE') THEN r.total_amount ELSE 0 END) AS montant_paye,
+    SUM(CASE WHEN r.status IN ('A_PAYER', 'EN ATTENTE') THEN r.total_amount ELSE 0 END) AS montant_a_payer,
+    SUM(CASE WHEN r.status IN ('FAIT', 'PAYE') THEN r.total_amount ELSE 0 END) +
+    SUM(CASE WHEN r.status IN ('A_PAYER', 'EN ATTENTE') THEN r.total_amount ELSE 0 END) AS chiffre_affaire_total
+FROM
+    reservation_details r;
+
+select * from vue_chiffre_affaire_total;
