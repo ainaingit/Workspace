@@ -34,6 +34,9 @@ public class ClientController {
 
     @Autowired
     private ReservationDetailsRepository reservationDetailsRepository;
+    @Autowired
+    private PaymentRepository paymentRepository;
+
     @PostMapping("/reserver")
     public String reserveWorkspace(@RequestParam("workspaceId") Long workspaceId,
                                    @RequestParam("workspaceName") String workspacename,
@@ -140,5 +143,25 @@ public class ClientController {
         System.out.println(reservations.size() + " reservations");
         model.addAttribute("reservations", reservations);
         return "mesreservations";
+    }
+
+    @PostMapping("/processPayment")
+    public String processPayment(@RequestParam("reservationId")Long id ,
+                                 @RequestParam("mode") String mode,
+                                 HttpSession session,
+                                 Model model) {
+        Reservation reservation = reservationRepository.findById(id).get();
+        reservation.setStatus(ReservationStatus.EN_ATTENTE);
+        System.out.println("tonga ato re ah ");
+        Payment payment = new Payment();
+        payment.setMode_payment(mode);
+        payment.setReservation(reservation);
+        payment.setRef_payment(Payment.generateRef());
+        payment.setRef_reservation(reservation.getRef());
+        payment.setStatut(String.valueOf(reservation.getStatus()));
+        payment.setDate_payment(LocalDate.now());
+
+        paymentRepository.save(payment) ;
+        return "huhu";
     }
 }
