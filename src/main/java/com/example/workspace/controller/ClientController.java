@@ -115,15 +115,22 @@ public class ClientController {
     }
 
     @PostMapping("/traitementPayerReservation")
-    public String payerunereservation(@RequestParam("mode") String mode,@RequestParam("reservationId") Long idres){
-        Reservation reservation = reservationRepository.findById(idres).get();
-        // mobl amila updatena le reservation.status ho lasa En attente
-        Payment payment = new Payment();
-        payment.setReservation(reservation);
-        payment.setMode_payment(mode);
+    public String payerunereservation(@RequestParam("mode") String mode, @RequestParam("reservationId") Long idres) {
+        // Charger la réservation par son ID
+        Reservation reservation = reservationRepository.findById(idres).orElse(null);
+
+        if (reservation != null) {
+            // Mettre à jour le statut de la réservation
+            reservation.setStatus(ReservationStatus.EN_ATTENTE);
+
+            // Sauvegarder la réservation mise à jour
+            reservationRepository.save(reservation);
+
+        }
 
         return "traitementPayerReservation";
     }
+
 
     @GetMapping("/mesreservation")
     public String mesreservation( HttpSession session, Model model) {

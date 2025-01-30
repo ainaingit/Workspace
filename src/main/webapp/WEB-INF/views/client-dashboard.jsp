@@ -79,7 +79,7 @@
 
     <!-- Formulaire de sélection de date -->
     <div class="text-center mt-4">
-        <h3>Sélectionner une date pour voir la disponibilité des espaces</h3>
+        <h3>Select une date pour voir la dispo des espaces</h3>
         <form id="dateForm" class="form-inline justify-content-center">
             <div class="form-group">
                 <label for="date" class="mr-2">Date :</label>

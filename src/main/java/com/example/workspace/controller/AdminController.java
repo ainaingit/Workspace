@@ -1,6 +1,8 @@
 package com.example.workspace.controller;
 
+import com.example.workspace.entity.Reservation;
 import com.example.workspace.repository.ChiffreAffaireTotalRepository;
+import com.example.workspace.repository.ReservationRepository;
 import com.example.workspace.vue.ChiffreAffaireParJour;
 import com.example.workspace.repository.ChiffreAffaireRepository;
 import com.example.workspace.vue.ChiffreAffaireTotal;
@@ -20,6 +22,8 @@ public class AdminController {
 
     @Autowired
     private ChiffreAffaireTotalRepository chiffreAffaireTotalRepository;
+    @Autowired
+    private ReservationRepository reservationRepository;
 
     @GetMapping("/importerdonnees")
     public String importerdonnees(){
@@ -42,5 +46,9 @@ public class AdminController {
         model.addAttribute("chiffredaffaire", statistiques.get(0));
         model.addAttribute("listechiffreaffaire", listeChiffreAffaire);
         return "statistique";  // Renvoie la vue 'statistiques.jsp'
+    }
+    @GetMapping("/validerPayement")
+    public String validerPayement(Model model) {
+        List<Reservation> liste_reservation  = reservationRepository.findByStatus();
     }
 }
