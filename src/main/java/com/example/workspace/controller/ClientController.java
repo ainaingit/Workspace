@@ -159,7 +159,6 @@ public class ClientController {
         payment.setRef_payment(Payment.generateRef());
         payment.setRef_reservation(reservation.getRef());
         payment.setStatut(String.valueOf(reservation.getStatus()));
-        payment.setDate_payment(LocalDate.now());
 
         paymentRepository.save(payment) ;
         return "huhu";

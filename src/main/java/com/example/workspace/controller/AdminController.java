@@ -60,27 +60,18 @@ public class AdminController {
         model.addAttribute("listePayment", listePayment);
         return "liste_paiement";
     }
-    /*@GetMapping("/validerPaiement")
-    public String validerPaiement(@RequestParam("reservationId") Long reservationId) {
-        // Récupérer la réservation
-        Reservation reservation = reservationRepository.findById(reservationId).orElse(null);
+    @PostMapping("/admin/validerPaiement")
+    public String validerPaiement(@RequestParam("paymentId") Long paymentId) {
+        Payment payment = paymentRepository.findById(paymentId).get();
+        Reservation reservation = payment.getReservation();
 
-        if (reservation != null) {
-            // Récupérer le paiement correspondant à la réservation et vérifier son statut
-            Payment paiement = paymentRepository.findByReservation(reservation);
-
-            if (paiement != null) {
-                // Mettre à jour le statut du paiement à "PAYE"
-                paiement.setStatut("PAYE");
-                paymentRepository.save(paiement);
-
-                // Mettre à jour le statut de la réservation à "PAYE"
-                reservation.setStatus(ReservationStatus.PAYE);
-                reservationRepository.save(reservation);
-            }
-        }
-
+        reservation.setStatus(ReservationStatus.PAYE);
+        payment.setDate_payment(LocalDate.now());
+        payment.setStatut(String.valueOf(ReservationStatus.PAYE));
+        // sauver les changements
+        reservationRepository.save(reservation);
+        paymentRepository.save(payment);
+        System.out.println("vita");
         return "paiementValide";  // Page ou redirection après validation du paiement
-    }*/
-
+    }
 }

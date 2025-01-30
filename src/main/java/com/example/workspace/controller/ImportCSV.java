@@ -71,7 +71,7 @@ public class ImportCSV {
                 workspaceRepository.save(workspace);
             }
             System.out.println("\n");
-            */
+
 
             // Traiter le fichier des réservations (si vous l'implémentez)
             InputStream reservationInputStream = reservationFile.getInputStream();
@@ -96,13 +96,11 @@ public class ImportCSV {
                     reservationOptionRepository.save(resop) ;
                 }
             }
-            // Vous pouvez ajouter une logique pour enregistrer les entités en base de données si nécessaire.
-            // Exemple :
-            // optionRepository.saveAll(options);
-            // workspaceRepository.saveAll(workspaces);
-            // reservationRepository.saveAll(reservations);
+            */
+            
+            System.out.println("ImporterCSV effectuer");
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return "Erreur lors de l'importation des fichiers";
         }
