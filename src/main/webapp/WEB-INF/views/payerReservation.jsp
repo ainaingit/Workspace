@@ -29,8 +29,8 @@
 
             <!-- Input pour saisir le montant -->
             <div class="mb-3">
-                <label for="paymentAmount" class="form-label">Montant à payer (€)</label>
-                <input type="number" step="0.01" class="form-control" id="paymentAmount" name="paymentAmount" required>
+                <label for="mode" class="form-label">Montant à payer (€)</label>
+                <input type="text" step="0.01" class="form-control" id="mode" name="mode" required>
             </div>
 
             <!-- Bouton de validation -->

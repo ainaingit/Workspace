@@ -12,9 +12,9 @@ public class Payment {
     private Long id;
     private String Ref_payment ;
     private LocalDate date_payment ;
-
+    private String mode_payment ;
     @OneToOne(cascade = CascadeType.ALL )
-    @JoinColumn(name = "ref")
+    @JoinColumn(name = "ref_reservation")
     private Reservation reservation ;
 
     public void setId(Long id) {
@@ -27,6 +27,14 @@ public class Payment {
 
     public String getRef_payment() {
         return Ref_payment;
+    }
+
+    public String getMode_payment() {
+        return mode_payment;
+    }
+
+    public void setMode_payment(String mode_payment) {
+        this.mode_payment = mode_payment;
     }
 
     public void setRef_payment(String ref_payment) {

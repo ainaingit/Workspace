@@ -1,4 +1,4 @@
-<%@ page import="com.example.workspace.objet.ReservationDetails" %>
+<%@ page import="com.example.workspace.vue.ReservationDetails" %>
 <%@ page import="java.util.List" %>
 <!DOCTYPE html>
 <html lang="fr">

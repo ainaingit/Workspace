@@ -22,3 +22,14 @@ GROUP BY
     r.id, r.date, r.start_hour, r.duration, w.price, r.status, r.client_id;
 
 
+/** chiffre d affaire par jour , avec filtre de date **/
+CREATE OR REPLACE VIEW v_chiffre_affaire_par_jour AS
+SELECT
+    rd.reservation_date AS date_paiement,
+    SUM(rd.total_amount) AS chiffre_affaire
+FROM reservation_details rd
+WHERE rd.status = 'PAYE'  -- Filtrer uniquement les réservations payées
+GROUP BY rd.reservation_date
+ORDER BY rd.reservation_date;
+
+SELECT * from  v_chiffre_affaire_par_jour ;
