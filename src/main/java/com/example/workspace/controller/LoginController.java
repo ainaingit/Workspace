@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -27,6 +29,9 @@ public class LoginController {
 
     @Autowired
     private WorkspaceRepository workspaceRepository;
+
+    @Autowired
+    ReservationRepository reservationRepository;
 
 
 
@@ -40,11 +45,18 @@ public class LoginController {
     public String clientLogin() { return "clientLogin"; }
 
     @GetMapping("/client-dashboard")
-    public String clientDashboard(Model model) {
-        List<Workspace> liste_workspace = workspaceRepository.findAll() ;
+    public String clientDashboard(@RequestParam(value = "date", required = false) String dateStr, Model model) {
+        List<Workspace> liste_workspace = workspaceRepository.findAll();
+        List<Reservation> reservations = new ArrayList<>();
+
+        if (dateStr != null && !dateStr.isEmpty()) {
+            LocalDate date = LocalDate.parse(dateStr);
+            reservations = reservationRepository.findByDate(date);
+        }
+
         model.addAttribute("liste_workspace", liste_workspace);
-        // Vous pouvez ajouter des attributs au modèle ici, si nécessaire
-        return "client-dashboard"; // Assurez-vous que ce fichier JSP ou template existe
+        model.addAttribute("reservations", reservations);
+        return "client-dashboard";
     }
 
     @GetMapping("/admin-dashboard")

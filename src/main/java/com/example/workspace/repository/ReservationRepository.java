@@ -21,4 +21,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findConflictingReservations(@Param("date") LocalDate date,
                                                   @Param("startTime") LocalTime startTime,
                                                   @Param("endTime") LocalTime endTime);
+
+    List<Reservation> findByDate(LocalDate date);
 }
