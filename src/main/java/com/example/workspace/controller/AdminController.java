@@ -3,12 +3,10 @@ package com.example.workspace.controller;
 import com.example.workspace.entity.Payment;
 import com.example.workspace.entity.Reservation;
 import com.example.workspace.entity.ReservationStatus;
-import com.example.workspace.repository.ChiffreAffaireTotalRepository;
-import com.example.workspace.repository.PaymentRepository;
-import com.example.workspace.repository.ReservationRepository;
+import com.example.workspace.repository.*;
 import com.example.workspace.vue.ChiffreAffaireParJour;
-import com.example.workspace.repository.ChiffreAffaireRepository;
 import com.example.workspace.vue.ChiffreAffaireTotal;
+import com.example.workspace.vue.DiviseHours;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,6 +29,9 @@ public class AdminController {
     private ReservationRepository reservationRepository;
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private DiviseHoursRepository diviseHoursRepository;
 
     @GetMapping("/importerdonnees")
     public String importerdonnees(){
@@ -73,5 +74,12 @@ public class AdminController {
         paymentRepository.save(payment);
         System.out.println("vita");
         return "paiementValide";  // Page ou redirection après validation du paiement
+    }
+
+    @GetMapping("/admin/divise-hours")
+    public String showDiviseHours(Model model) {
+        List<DiviseHours> topHours = diviseHoursRepository.findAll();
+        model.addAttribute("diviseHours", topHours);
+        return "divise_hours"; // Nom de la JSP à créer
     }
 }

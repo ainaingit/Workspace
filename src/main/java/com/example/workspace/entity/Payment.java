@@ -1,8 +1,18 @@
 package com.example.workspace.entity;
 
 import jakarta.persistence.*;
+
+import java.io.BufferedReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Random;
+import java.nio.file.*;
+import java.io.IOException;
+import java.util.stream.Stream;
 
 @Entity
 public class Payment {
@@ -97,6 +107,40 @@ public class Payment {
             int number = 10000 + random.nextInt(90000); // Nombre entre 10000 et 99999
             return letter + String.valueOf(number);
         }
+    }
+
+    // Fonction pour importer les données CSV et créer une liste de paiements
+    public static List<Payment> importCsv(InputStream inputStream) {
+        List<Payment> payments = new ArrayList<>();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream))) {
+            String line;
+            // Passer la première ligne si elle contient des entêtes
+            reader.readLine(); // Skip the header line
+
+            while ((line = reader.readLine()) != null) {
+                String[] columns = line.split(",");
+                if (columns.length >= 3) {
+                    Payment payment = new Payment();
+                    payment.setRef_payment(columns[0].trim());
+
+                    // Convertir la date (assumons que le format de la date est dd/MM/yyyy)
+                    payment.setDate_payment(LocalDate.parse(columns[2].trim(), formatter));
+
+                    // On définit les autres champs (mode_payment, statut) comme souhaité
+                    payment.setMode_payment("Non défini");  // Tu peux ajouter une logique ici si nécessaire
+                    payment.setStatut("EN_ATTENTE");  // On définit le statut par défaut
+                    payment.setRef_reservation(columns[1].trim());
+                    // Ajouter à la liste
+                    payments.add(payment);
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return payments;
     }
 
 }

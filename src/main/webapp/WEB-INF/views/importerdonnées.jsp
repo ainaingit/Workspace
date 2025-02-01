@@ -25,6 +25,11 @@
             <input type="file" class="form-control-file" id="optionalItemsFile" name="optionalItemsFile" required>
         </div>
 
+        <div class="form-group">
+            <label for="optionalItemsFile">Liste des options payantes (imprimante, appareil photo, vidéoprojecteur, laptop)</label>
+            <input type="file" class="form-control-file" id="PaymentFile" name="PaymentFile" required>
+        </div>
+
         <div class="form-group text-center">
             <button type="submit" class="btn btn-primary">Importer les fichiers</button>
         </div>
