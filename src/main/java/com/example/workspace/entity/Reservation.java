@@ -25,10 +25,12 @@ public class Reservation {
 
     @Column(nullable = false)
     private LocalDate date;  // Date de la réservation (date sans heure)
-    private String ref ;
+
+    private String ref; // Référence générée automatiquement
+
     private LocalTime startHour;   // Heure de début de la réservation (en entier, ex: 8 pour 8h)
-    private LocalTime endHour;   // Heure de début de la réservation (en entier, ex: 8 pour 8h)
-    private int duration;     // Durée de la réservation en heures
+    private LocalTime endHour;     // Heure de fin de la réservation
+    private int duration;          // Durée de la réservation en heures
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -63,7 +65,6 @@ public class Reservation {
     public void setDate(LocalDate date) {
         this.date = date;
     }
-
 
     public LocalTime getStartHour() {
         return startHour;
@@ -139,11 +140,10 @@ public class Reservation {
         this.setClient(client);
     }
 
-
     public static List<Reservation> parseCSV(InputStream inputStream,
                                              WorkspaceRepository workspaceRepository,
                                              ClientRepository clientRepository,
-                                             OptionRepository optionRepository) {  // Ajouter l'OptionRepository pour trouver les options
+                                             OptionRepository optionRepository) {
         List<Reservation> reservations = new ArrayList<>();
         // Définir le format de la date
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
@@ -157,14 +157,19 @@ public class Reservation {
                              .withTrim()                 // Supprimer les espaces inutiles
              )) {
 
+            // Variable pour suivre l'incrément des références
+            int refCounter = 1;
+
             // Parcourir les lignes suivantes
             for (CSVRecord csvRecord : csvParser) {
                 Reservation reservation = new Reservation();
                 // Utiliser les noms d'en-têtes pour peupler l'objet Reservation
-                reservation.setRef(csvRecord.get("ref"));
+                reservation.setRef(String.format("ref%03d", refCounter));  // Créer la référence avec un format à 3 chiffres
+                refCounter++;  // Incrémenter le compteur pour la prochaine réservation
+
                 reservation.setWorkspace(workspaceRepository.findByName(csvRecord.get("espace")));
                 reservation.setClient(clientRepository.findByNumber(csvRecord.get("client")));
-                reservation.setDate(LocalDate.parse(csvRecord.get("date"),formatter));
+                reservation.setDate(LocalDate.parse(csvRecord.get("date"), formatter));
                 reservation.setStartHour(LocalTime.parse(csvRecord.get("heure_debut")));
                 reservation.setDuration(Integer.parseInt(csvRecord.get("duree")));
                 reservation.setEndHour(reservation.getStartHour().plusHours(Integer.parseInt(csvRecord.get("duree"))));
@@ -185,7 +190,6 @@ public class Reservation {
 
                 reservation.setOptions(reservationOptions); // Assigner la liste (vide si aucune option valide)
 
-
                 reservations.add(reservation);  // Ajouter la réservation à la liste
             }
         } catch (IOException e) {
@@ -193,5 +197,4 @@ public class Reservation {
         }
         return reservations;
     }
-
 }

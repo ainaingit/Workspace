@@ -49,6 +49,7 @@
     <a href="/importerdonnees" class="btn btn-light">Importer les données</a>
     <a href="/admin/paiement" class="btn btn-light">Valider les paiements</a>
     <a href="/admin/statistiques" class="btn btn-light">Statistiques</a>
+    <a href="/admin/divise-hours" class="btn btn-light">Crenau mperce </a>
 </div>
 
 <!-- Content -->

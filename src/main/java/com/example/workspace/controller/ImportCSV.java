@@ -26,16 +26,18 @@ public class ImportCSV {
     private ReservationRepository reservationRepository;
     @Autowired
     private ReservationOptionRepository reservationOptionRepository;
-
+    @Autowired
+    private PaymentRepository paymentRepository;
     @PostMapping("/import")
     public String ImporterCSV(
             @RequestParam("optionalItemsFile") MultipartFile optionFile,
             @RequestParam("workspaceFile") MultipartFile workspaceFile,
-            @RequestParam("reservationClientFile") MultipartFile reservationFile) {
+            @RequestParam("reservationClientFile") MultipartFile reservationFile,
+            @RequestParam("PaymentFile") MultipartFile paymentFile) {
 
         try {
             // prends les clients
-            /* List<Client> clients = Client.parseCSV(reservationFile.getInputStream());
+             List<Client> clients = Client.parseCSV(reservationFile.getInputStream());
             for (int i = 0; i < clients.size(); i++) {
                 System.out.println("client potentiel  :" + clients.get(i).getNumber());
                 // Vérifier si le client existe déjà dans la base de données
@@ -95,8 +97,14 @@ public class ImportCSV {
                     ReservationOption resop = res.getOptions().get(j);
                     reservationOptionRepository.save(resop) ;
                 }
+
             }
-            */
+
+            /*Import payment file */
+            InputStream paymentInputStream = reservationFile.getInputStream();
+            List<Payment> liste_payment  = Payment.importCsv(paymentInputStream);
+                paymentRepository.saveAll(liste_payment);
+
 
             System.out.println("ImporterCSV effectuer");
 

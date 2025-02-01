@@ -23,4 +23,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                                   @Param("endTime") LocalTime endTime);
 
     List<Reservation> findByDate(LocalDate date);
+
+    Reservation findTopByOrderByRefDesc();
 }

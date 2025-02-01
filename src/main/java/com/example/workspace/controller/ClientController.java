@@ -37,6 +37,11 @@ public class ClientController {
     @Autowired
     private PaymentRepository paymentRepository;
 
+    public String findLastRef() {
+        Reservation lastReservation = reservationRepository.findTopByOrderByRefDesc();
+        return lastReservation != null ? lastReservation.getRef() : null;
+    }
+
     @PostMapping("/reserver")
     public String reserveWorkspace(@RequestParam("workspaceId") Long workspaceId,
                                    @RequestParam("workspaceName") String workspacename,
@@ -59,45 +64,62 @@ public class ClientController {
 
         // Conversion de la date en type LocalDate
         LocalDate date = LocalDate.parse(reservationDate);
-        LocalTime startHourInt = LocalTime.of(Integer.parseInt(startHour), 0);;  // Convertir l'heure de début en entier
-        LocalTime endtime  = startHourInt.plusHours(duration);
-        // prendre la session du client
+        LocalTime startHourInt = LocalTime.of(Integer.parseInt(startHour), 0);  // Convertir l'heure de début en entier
+        LocalTime endtime = startHourInt.plusHours(duration);
+
+        // Récupérer la session du client
         Long sessionclient = (Long) session.getAttribute("clientId");
 
-        // prendre les workspace et le client
-        Workspace workspace = workspaceRepository.findById(workspaceId).get();
-        Client client  = clientRepository.findById(sessionclient).get();
+        // Récupérer les objets workspace et client
+        Workspace workspace = workspaceRepository.findById(workspaceId).orElse(null);
+        Client client = clientRepository.findById(sessionclient).orElse(null);
 
-        // verifier si le creneau est libre
-        boolean boolea  = true;
-        if(!reservationRepository.findConflictingReservations(date, startHourInt, endtime).isEmpty()) boolea = false;
-        System.out.println("tonga eto ");
-        // logique si y a un conflit
-        if (boolea){
-            // create a reservation
-            System.out.println("aonaaaaa oa ");
-            Reservation reservation = new Reservation(date,startHourInt,duration,workspace,client);
-            System.out.println("aonaaaaa");
+        // Vérifier s'il y a des conflits de créneau
+        boolean isAvailable = true;
+        if (workspace != null && client != null && !reservationRepository.findConflictingReservations(date, startHourInt, endtime).isEmpty()) {
+            isAvailable = false;
+        }
+
+        // Logique si il n'y a pas de conflit
+        if (isAvailable) {
+            // Récupérer la dernière réservation (ou un modèle de référence si aucune réservation)
+            String lastRef = findLastRef();
+            String newRef = generateNextRef(lastRef);
+
+            // Créer la réservation avec la nouvelle référence
+            Reservation reservation = new Reservation(date, startHourInt, duration, workspace, client);
+            reservation.setRef(newRef);  // Set la nouvelle référence pour la réservation
+
             // Sauvegarder la réservation en base de données
-            reservation = reservationRepository.save(reservation);  // Ici, l'ID sera généré automatiquement
+            reservation = reservationRepository.save(reservation);  // L'ID sera généré automatiquement
 
-            // Récupérer l'ID généré pour la réservation
-            Long reservationId = reservation.getId();
-            System.out.println("Reservation ID: " + reservationId);
-
+            // Ajouter les options à la réservation
             for (Long optionId : optionIds) {
-                ReservationOption resopt = new ReservationOption(reservation,optionRepository.findById(optionId).get());
-                reservationOptionRepository.save(resopt);
+                Option option = optionRepository.findById(optionId).orElse(null);
+                if (option != null) {
+                    ReservationOption resopt = new ReservationOption(reservation, option);
+                    reservationOptionRepository.save(resopt);
+                }
             }
 
-            System.out.println("Reservayion et Option reservation inserer ");
             return "reservationConfirmation";  // Vue de confirmation de réservation
-        }
-        else{
-            model.addAttribute("Erreur","Erreur be ");
-            return "reservation";
+        } else {
+            model.addAttribute("Erreur", "Erreur de réservation, créneau indisponible.");
+            return "reservation";  // Vue de la page de réservation avec l'erreur
         }
     }
+
+
+    private String generateNextRef(String lastRef) {
+        if (lastRef == null || lastRef.isEmpty()) {
+            return "ref001";  // Si aucune référence précédente, commencer avec "ref001"
+        }
+        // Extraire le numéro de la dernière référence (par exemple, "ref003" devient "003")
+        String numPart = lastRef.substring(3);
+        int nextNum = Integer.parseInt(numPart) + 1;  // Incrémenter le numéro
+        return String.format("ref%03d", nextNum);  // Retourner la nouvelle référence sous forme "ref004"
+    }
+
 
     @PostMapping("/annulerReservation")
     public String annulerReservation( @RequestParam("reservationId") Long idReservation,
