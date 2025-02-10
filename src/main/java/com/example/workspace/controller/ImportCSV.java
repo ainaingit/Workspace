@@ -36,6 +36,7 @@ public class ImportCSV {
             @RequestParam("PaymentFile") MultipartFile paymentFile) {
 
         try {
+
             // prends les clients
              List<Client> clients = Client.parseCSV(reservationFile.getInputStream());
             for (int i = 0; i < clients.size(); i++) {
@@ -101,8 +102,8 @@ public class ImportCSV {
             }
 
             /*Import payment file */
-            InputStream paymentInputStream = reservationFile.getInputStream();
-            List<Payment> liste_payment  = Payment.importCsv(paymentInputStream);
+            InputStream paymentInputStream = paymentFile.getInputStream();
+            List<Payment> liste_payment  = Payment.importCsv(paymentInputStream,reservationRepository);
                 paymentRepository.saveAll(liste_payment);
 
 

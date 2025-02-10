@@ -25,4 +25,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findByDate(LocalDate date);
 
     Reservation findTopByOrderByRefDesc();
+
+    Reservation findByRef(String ref);
 }

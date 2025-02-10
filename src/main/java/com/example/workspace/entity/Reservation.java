@@ -164,7 +164,7 @@ public class Reservation {
             for (CSVRecord csvRecord : csvParser) {
                 Reservation reservation = new Reservation();
                 // Utiliser les noms d'en-têtes pour peupler l'objet Reservation
-                reservation.setRef(String.format("ref%03d", refCounter));  // Créer la référence avec un format à 3 chiffres
+                reservation.setRef(String.format("r%03d", refCounter));  // Créer la référence avec un format à 3 chiffres
                 refCounter++;  // Incrémenter le compteur pour la prochaine réservation
 
                 reservation.setWorkspace(workspaceRepository.findByName(csvRecord.get("espace")));
