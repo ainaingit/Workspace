@@ -39,47 +39,45 @@ public class AdminController {
     }
 
     @GetMapping("/admin/statistiques")
-    public String statistiques(@RequestParam(required = false) LocalDate startDate,
-                               @RequestParam(required = false) LocalDate endDate,
-                               Model model) {
-        List<ChiffreAffaireParJour> listeChiffreAffaire;
+    public String statistiques(@RequestParam(required = false) LocalDate startDate, Model model) {
+        List<ChiffreAffaireParJour> listeChiffreAffaire = (startDate != null)
+                ? chiffreAffaireRepository.findByDatePaiement(startDate)
+                : chiffreAffaireRepository.findAll();
 
-        if (startDate != null && endDate != null) {
-            listeChiffreAffaire = chiffreAffaireRepository.findByDatePaiementBetween(startDate, endDate);
-        } else {
-            listeChiffreAffaire = chiffreAffaireRepository.findAll();  // Si pas de dates, récupérer toutes les données
-        }
         List<ChiffreAffaireTotal> statistiques = chiffreAffaireTotalRepository.findAll();
-        System.out.println("angezany = " + statistiques.size());
         model.addAttribute("chiffredaffaire", statistiques.get(0));
         model.addAttribute("listechiffreaffaire", listeChiffreAffaire);
-        return "statistique";  // Renvoie la vue 'statistiques.jsp'
+
+        return "statistique";
     }
+
     @GetMapping("/admin/paiement")
     public String loadpaiement(Model model) {
         List<Payment> listePayment = paymentRepository.findAll();
         model.addAttribute("listePayment", listePayment);
         return "liste_paiement";
     }
+
     @PostMapping("/admin/validerPaiement")
     public String validerPaiement(@RequestParam("paymentId") Long paymentId) {
-        Payment payment = paymentRepository.findById(paymentId).get();
+        Payment payment = paymentRepository.findById(paymentId).orElseThrow();
         Reservation reservation = payment.getReservation();
 
         reservation.setStatus(ReservationStatus.PAYE);
         payment.setDate_payment(LocalDate.now());
         payment.setStatut(String.valueOf(ReservationStatus.PAYE));
-        // sauver les changements
+
         reservationRepository.save(reservation);
         paymentRepository.save(payment);
-        System.out.println("vita");
-        return "paiementValide";  // Page ou redirection après validation du paiement
+
+        return "paiementValide";
     }
+
 
     @GetMapping("/admin/divise-hours")
     public String showDiviseHours(Model model) {
-        List<DiviseHours> topHours = diviseHoursRepository.findAll();
-        model.addAttribute("diviseHours", topHours);
-        return "divise_hours"; // Nom de la JSP à créer
+        model.addAttribute("diviseHours", diviseHoursRepository.findAllTopHours());
+        return "divise_hours";
     }
+
 }

@@ -28,6 +28,8 @@
         <!-- Bouton Client -->
         <a href="/client/login" class="btn btn-secondary">Client</a>
     </div>
+
+    <a href="/admin/reset" class="btn btn-secondary">Reset Table</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

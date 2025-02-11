@@ -1,10 +1,9 @@
 <%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-
 <%@ page import="com.example.workspace.entity.Workspace" %>
 <%@ page import="com.example.workspace.entity.Reservation" %>
-<%@ page import="com.example.workspace.entity.ReservationStatus" %>
+<%@ page import="com.example.workspace.model.DashboardModel" %>
+<%@ page import="java.util.Map" %>
 <%@ page import="java.util.List" %>
-<%@ page import="java.time.LocalTime" %>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -16,11 +15,11 @@
         body {
             display: flex;
             min-height: 100vh;
-            background-color: #f5f5dc; /* Cream */
+            background-color: #f5f5dc;
         }
         .sidebar {
             width: 260px;
-            background-color: #001f3f; /* Navy */
+            background-color: #001f3f;
             color: white;
             padding-top: 30px;
             position: fixed;
@@ -54,31 +53,12 @@
             color: #001f3f;
             text-align: center;
         }
-        .btn-custom {
-            width: 220px;
-            margin: 10px auto;
-            display: block;
-            background-color: #003366;
-            color: white;
-            font-weight: bold;
-        }
-        .btn-custom:hover {
-            background-color: #001f3f;
-        }
         .table-container {
             margin-top: 30px;
         }
-        .bg-danger {
-            background-color: #dc3545 !important; /* Rouge */
-            color: white;
-        }
-        .bg-purple {
-            background-color: #6a0dad !important; /* Violet */
-            color: white;
-        }
-        .bg-warning {
-            background-color: #ffc107 !important; /* Jaune */
-        }
+        .bg-danger { background-color: #dc3545 !important; color: white; }
+        .bg-purple { background-color: #6a0dad !important; color: white; }
+        .bg-warning { background-color: #ffc107 !important; }
     </style>
 </head>
 <body>
@@ -86,8 +66,8 @@
 <!-- Sidebar -->
 <div class="sidebar">
     <h3 class="text-center text-white">Menu Client</h3>
-    <a href="/client/espaces-travail" class="btn btn-custom">📌 Espaces de Travail</a>
-    <a href="/mesreservation" class="btn btn-custom">📅 Mes Réservations</a>
+    <a href="/client-dashboard" class="btn btn-primary">📌 Espaces de Travail</a>
+    <a href="/mesreservation" class="btn btn-primary">📅 Mes Réservations</a>
 </div>
 
 <!-- Content -->
@@ -95,18 +75,18 @@
     <h1>📊 Tableau de bord Client</h1>
     <p class="text-center">Bienvenue dans votre espace client. Sélectionnez une date pour voir les disponibilités.</p>
 
-    <!-- Formulaire de sélection de date -->
+    <!-- Sélection de date -->
     <div class="text-center mt-4">
         <h3>🔎 Sélectionnez une date</h3>
         <form id="dateForm" class="form-inline justify-content-center">
-            <div class="form-group">
-                <input type="date" id="date" name="date" class="form-control" required>
-            </div>
+            <button type="button" id="prevDate" class="btn btn-secondary">◀ Précédent</button>
+            <input type="date" id="date" name="date" class="form-control" required>
             <button type="button" id="submitDate" class="btn btn-primary ml-3">🔍 Voir</button>
+            <button type="button" id="nextDate" class="btn btn-secondary ml-3">Suivant ▶</button>
         </form>
     </div>
 
-    <!-- Tableau des espaces de travail -->
+    <!-- Tableau des espaces -->
     <div class="table-container" id="workspaceTable">
         <table class="table table-bordered mt-4 text-center">
             <thead class="table-dark">
@@ -120,39 +100,29 @@
             </thead>
             <tbody>
             <%
-                List<Workspace> espacesDeTravail = (List<Workspace>) request.getAttribute("liste_workspace");
-                List<Reservation> reservations = (List<Reservation>) request.getAttribute("reservations");
+                DashboardModel dashboardModel = (DashboardModel) request.getAttribute("dashboardModel");
+                List<Workspace> espacesDeTravail = dashboardModel.getListeWorkspace();
+                Map<Long, Map<Integer, String>> cellStyles = dashboardModel.getCellStyles();
+                Map<Long, Map<Integer, String>> hourSymbols = dashboardModel.getHourSymbols();
 
                 for (Workspace espace : espacesDeTravail) {
             %>
             <tr>
                 <td><%= espace.getName() %></td>
-                <%
-                    for (int hour = 8; hour <= 18; hour++) {
-                        String cellClass = "bg-warning"; // Par défaut, libre (jaune)
-
-                        for (Reservation res : reservations) {
-                            if (res.getWorkspace().getId().equals(espace.getId())) {
-                                int startHour = res.getStartHour().getHour();
-                                int endHour = startHour + res.getDuration();
-
-                                if (hour >= startHour && hour < endHour) {
-                                    if (res.getStatus() == ReservationStatus.PAYE) {
-                                        cellClass = "bg-danger"; // Rouge (PAYE)
-                                    } else {
-                                        cellClass = "bg-purple"; // Violet (autres statuts)
-                                    }
-                                    break;
-                                }
-                            }
-                        }
+                <% for (int hour = 8; hour <= 18; hour++) {
+                    // Récupérer la classe et le symbole pour chaque heure
+                    String cellClass = cellStyles.get(espace.getId()).get(hour);
+                    String symbol = hourSymbols.get(espace.getId()).get(hour);
                 %>
-                <td class="<%= cellClass %>"></td>
+                <td class="<%= cellClass %>">
+                    <%= symbol %>
+                </td>
                 <% } %>
                 <td>
-                    <form action="/reserver" method="POST">
+                    <form action="/reserver" method="POST" class="reservationForm">
                         <input type="hidden" name="workspaceId" value="<%= espace.getId() %>" />
                         <input type="hidden" name="workspaceName" value="<%= espace.getName() %>" />
+                        <input type="hidden" name="selectedDate" id="selectedDate" value="<%= request.getParameter("date") != null ? request.getParameter("date") : "" %>" />
                         <button type="submit" class="btn btn-success">✔ Réserver</button>
                     </form>
                 </td>
@@ -164,11 +134,53 @@
 </div>
 
 <script>
+    function getDateFromURL() {
+        const urlParams = new URLSearchParams(window.location.search);
+        return urlParams.get('date');
+    }
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const dateInput = document.getElementById('date');
+        const selectedDate = getDateFromURL();
+
+        if (selectedDate) {
+            dateInput.value = selectedDate;
+        }
+
+        const reservationForms = document.querySelectorAll('.reservationForm');
+        reservationForms.forEach(form => {
+            form.addEventListener('submit', function(event) {
+                const selectedDate = dateInput.value;
+                if (!selectedDate) {
+                    event.preventDefault();
+                    alert("Veuillez sélectionner une date avant de réserver.");
+                }
+            });
+        });
+    });
+
     document.getElementById('submitDate').addEventListener('click', function() {
         const selectedDate = document.getElementById('date').value;
         if (selectedDate) {
             window.location.href = '/client-dashboard?date=' + selectedDate;
         }
+    });
+
+    // Navigation avec les boutons Précédent et Suivant
+    document.getElementById('prevDate').addEventListener('click', function() {
+        const selectedDate = document.getElementById('date').value;
+        const date = new Date(selectedDate);
+        date.setDate(date.getDate() - 1); // Recule d'un jour
+        const newDate = date.toISOString().split('T')[0]; // Format YYYY-MM-DD
+        window.location.href = '/client-dashboard?date=' + newDate;
+    });
+
+    document.getElementById('nextDate').addEventListener('click', function() {
+        const selectedDate = document.getElementById('date').value;
+        const date = new Date(selectedDate);
+        date.setDate(date.getDate() + 1); // Avance d'un jour
+        const newDate = date.toISOString().split('T')[0]; // Format YYYY-MM-DD
+        window.location.href = '/client-dashboard?date=' + newDate;
     });
 </script>
 

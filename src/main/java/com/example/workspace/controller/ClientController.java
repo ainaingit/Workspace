@@ -1,8 +1,9 @@
 package com.example.workspace.controller;
 
 import com.example.workspace.entity.*;
-import com.example.workspace.vue.ReservationDetails;
 import com.example.workspace.repository.*;
+import com.example.workspace.service.ReservationService;
+import com.example.workspace.vue.ReservationDetails;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -13,31 +14,22 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Controller
 public class ClientController {
-    @Autowired
-    private WorkspaceRepository workspaceRepository;
-
-    @Autowired
-    private OptionRepository optionRepository;
 
     @Autowired
     private ReservationRepository reservationRepository;
-
-    @Autowired
-    private ClientRepository clientRepository;
-
-    @Autowired
-    private ReservationOptionRepository reservationOptionRepository;
-
     @Autowired
     private ReservationDetailsRepository reservationDetailsRepository;
     @Autowired
-    private PaymentRepository paymentRepository;
+    private ReservationService reservationService;
 
-    public String findLastRef() {
+    private String findLastRef() {
         Reservation lastReservation = reservationRepository.findTopByOrderByRefDesc();
         return lastReservation != null ? lastReservation.getRef() : null;
     }
@@ -45,144 +37,88 @@ public class ClientController {
     @PostMapping("/reserver")
     public String reserveWorkspace(@RequestParam("workspaceId") Long workspaceId,
                                    @RequestParam("workspaceName") String workspacename,
-                                   Model model) {
-        List<Option> options = optionRepository.findAll();
-        model.addAttribute("workspaceId", workspaceId);
-        model.addAttribute("workspaceName", workspacename);
-        model.addAttribute("options", options);
-        return "reservation";  // Redirige vers la page des espaces de travail
+                                   @RequestParam("selectedDate") String selectedDate,  // Récupérer la date sélectionnée
+                                   Model model,
+                                   HttpSession session) {
+        Long clientId = (Long) session.getAttribute("clientId");
+        if (clientId == null) {
+            return "redirect:/client/login";  // Redirige vers la page de login si clientId est null
+        }
+
+        // Affichage de la date sélectionnée
+        System.out.println("Date sélectionnée : " + selectedDate);
+
+        // Appel de la méthode prepareReservation avec la date sélectionnée
+        return reservationService.prepareReservation(workspaceId, workspacename, selectedDate, model, session);
     }
+
 
     @PostMapping("/confirmReservation")
     public String confirmReservation(@RequestParam("workspaceId") Long workspaceId,
-                                     @RequestParam("reservationDate") String reservationDate,  // Date sous forme de String
-                                     @RequestParam("startHour") String startHour,  // Heure sous forme de String
-                                     @RequestParam("duration") int duration,  // Durée sous forme d'entier
-                                     @RequestParam("option") Long[] optionIds,  // Tableau d'ID d'options sélectionnées
+                                     @RequestParam("reserveurId") Long reserveurId,
+                                     @RequestParam("reservationDate") String reservationDate,
+                                     @RequestParam("startHour") String startHour,
+                                     @RequestParam("duration") int duration,
+                                     @RequestParam(value = "option", required = false) Long[] optionIds,
                                      HttpSession session,
                                      Model model) {
-
-        // Conversion de la date en type LocalDate
-        LocalDate date = LocalDate.parse(reservationDate);
-        LocalTime startHourInt = LocalTime.of(Integer.parseInt(startHour), 0);  // Convertir l'heure de début en entier
-        LocalTime endtime = startHourInt.plusHours(duration);
-
-        // Récupérer la session du client
-        Long sessionclient = (Long) session.getAttribute("clientId");
-
-        // Récupérer les objets workspace et client
-        Workspace workspace = workspaceRepository.findById(workspaceId).orElse(null);
-        Client client = clientRepository.findById(sessionclient).orElse(null);
-
-        // Vérifier s'il y a des conflits de créneau
-        boolean isAvailable = true;
-        if (workspace != null && client != null && !reservationRepository.findConflictingReservations(date, startHourInt, endtime).isEmpty()) {
-            isAvailable = false;
+        Long clientId = (Long) session.getAttribute("clientId");
+        if (clientId == null) {
+            return "redirect:/client/login";  // Redirige vers la page de login si clientId est null
         }
-
-        // Logique si il n'y a pas de conflit
-        if (isAvailable) {
-            // Récupérer la dernière réservation (ou un modèle de référence si aucune réservation)
-            String lastRef = findLastRef();
-            String newRef = generateNextRef(lastRef);
-
-            // Créer la réservation avec la nouvelle référence
-            Reservation reservation = new Reservation(date, startHourInt, duration, workspace, client);
-            reservation.setRef(newRef);  // Set la nouvelle référence pour la réservation
-
-            // Sauvegarder la réservation en base de données
-            reservation = reservationRepository.save(reservation);  // L'ID sera généré automatiquement
-
-            // Ajouter les options à la réservation
-            for (Long optionId : optionIds) {
-                Option option = optionRepository.findById(optionId).orElse(null);
-                if (option != null) {
-                    ReservationOption resopt = new ReservationOption(reservation, option);
-                    reservationOptionRepository.save(resopt);
-                }
-            }
-
-            return "reservationConfirmation";  // Vue de confirmation de réservation
-        } else {
-            model.addAttribute("Erreur", "Erreur de réservation, créneau indisponible.");
-            return "reservation";  // Vue de la page de réservation avec l'erreur
-        }
+        return reservationService.confirmReservation(workspaceId, reserveurId, reservationDate, startHour, duration, optionIds, session, model);
     }
 
-
-    private String generateNextRef(String lastRef) {
-        if (lastRef == null || lastRef.isEmpty()) {
-            return "ref001";  // Si aucune référence précédente, commencer avec "ref001"
-        }
-        // Extraire le numéro de la dernière référence (par exemple, "ref003" devient "003")
-        String numPart = lastRef.substring(3);
-        int nextNum = Integer.parseInt(numPart) + 1;  // Incrémenter le numéro
-        return String.format("ref%03d", nextNum);  // Retourner la nouvelle référence sous forme "ref004"
-    }
 
 
     @PostMapping("/annulerReservation")
-    public String annulerReservation( @RequestParam("reservationId") Long idReservation,
-                                       Model model) {
+    public String annulerReservation(@RequestParam("reservationId") Long idReservation, HttpSession session, Model model) {
+        // Supprimer la réservation
         reservationRepository.deleteById(idReservation);
-        System.out.println("Reservation deleted");
-        return "annulerReservation";
+
+        // Ajouter un message de confirmation dans le modèle (facultatif)
+        model.addAttribute("message", "La réservation avec l'ID " + idReservation + " a été supprimée.");
+
+        // Rediriger vers la page des réservations de l'utilisateur
+        return "redirect:/mesreservation";
     }
 
+
+
     @PostMapping("/payerReservation")
-    public String payerReservation( @RequestParam("reservationId") Long idReservation,
-                                      Model model) {
-        Reservation reservation = reservationRepository.findById(idReservation).get();
-        ReservationDetails reservationDetails = reservationDetailsRepository.findById(idReservation).get();
-        model.addAttribute("reservation", reservation);
-        model.addAttribute("reservationDetails", reservationDetails);
-        return "payerReservation";
+    public String payerReservation(@RequestParam("reservationId") Long idReservation, Model model) {
+        // Appeler la méthode du service pour obtenir les informations de la réservation
+        return reservationService.getReservationToPay(idReservation, model);
     }
+
 
     @PostMapping("/traitementPayerReservation")
     public String payerunereservation(@RequestParam("mode") String mode, @RequestParam("reservationId") Long idres) {
-        // Charger la réservation par son ID
-        Reservation reservation = reservationRepository.findById(idres).orElse(null);
-
-        if (reservation != null) {
-            // Mettre à jour le statut de la réservation
-            reservation.setStatus(ReservationStatus.EN_ATTENTE);
-
-            // Sauvegarder la réservation mise à jour
-            reservationRepository.save(reservation);
-
-        }
-
-        return "traitementPayerReservation";
+        // Appeler la méthode du service pour traiter le paiement
+        return reservationService.payerviareference(idres, mode);
     }
 
-
     @GetMapping("/mesreservation")
-    public String mesreservation( HttpSession session, Model model) {
-        Long idclient  = (Long) session.getAttribute("clientId");
-        System.out.println(idclient + " huhu ");
-        List<ReservationDetails> reservations = reservationDetailsRepository.findByClientId(idclient);
-        System.out.println(reservations.size() + " reservations");
+    public String mesreservation(HttpSession session, Model model) {
+        Long clientId = (Long) session.getAttribute("clientId");
+        if (clientId == null) {
+            return "redirect:/client/login";  // Redirige vers la page de login si clientId est null
+        }
+        List<ReservationDetails> reservations = reservationDetailsRepository.findByClientId(clientId);
         model.addAttribute("reservations", reservations);
         return "mesreservations";
     }
 
     @PostMapping("/processPayment")
-    public String processPayment(@RequestParam("reservationId")Long id ,
+    public String processPayment(@RequestParam("reservationId") Long id,
                                  @RequestParam("mode") String mode,
                                  HttpSession session,
                                  Model model) {
-        Reservation reservation = reservationRepository.findById(id).get();
-        reservation.setStatus(ReservationStatus.EN_ATTENTE);
-        System.out.println("tonga ato re ah ");
-        Payment payment = new Payment();
-        payment.setMode_payment(mode);
-        payment.setReservation(reservation);
-        payment.setRef_payment(Payment.generateRef());
-        payment.setRef_reservation(reservation.getRef());
-        payment.setStatut(String.valueOf(reservation.getStatus()));
-
-        paymentRepository.save(payment) ;
-        return "huhu";
+        Long clientId = (Long) session.getAttribute("clientId");
+        if (clientId == null) {
+            return "redirect:/client/login";  // Redirige vers la page de login si clientId est null
+        }
+        return reservationService.processPayment(id, mode, session, model);
     }
+
 }

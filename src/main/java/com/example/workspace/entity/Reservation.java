@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 @Entity
@@ -44,10 +45,15 @@ public class Reservation {
     @JoinColumn(name = "client_id")
     private Client client;  // Le client qui a effectué la réservation
 
+    @ManyToOne
+    @JoinColumn(name = "reserveur_id")
+    private Client reserveur;  // Le client qui a effectué la réservation
+
     @OneToMany(mappedBy = "reservation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ReservationOption> options;
 
     public Reservation() {}
+
 
     // Getters et setters
     public Long getId() {
@@ -130,7 +136,15 @@ public class Reservation {
         this.options = options;
     }
 
-    public Reservation(LocalDate date, LocalTime startHour, int duration, Workspace workspace, Client client) {
+    public Client getReserveur() {
+        return reserveur;
+    }
+
+    public void setReserveur(Client reserveur) {
+        this.reserveur = reserveur;
+    }
+
+    public Reservation(LocalDate date, LocalTime startHour, int duration, Workspace workspace, Client client,Client reserveur) {
         this.setDate(date);
         this.setStartHour(startHour);
         this.setEndHour(startHour.plusHours(duration));
@@ -138,6 +152,7 @@ public class Reservation {
         this.setStatus(ReservationStatus.valueOf("A_PAYER"));
         this.setWorkspace(workspace);
         this.setClient(client);
+        this.setReserveur(reserveur);
     }
 
     public static List<Reservation> parseCSV(InputStream inputStream,
@@ -157,15 +172,10 @@ public class Reservation {
                              .withTrim()                 // Supprimer les espaces inutiles
              )) {
 
-            // Variable pour suivre l'incrément des références
-            int refCounter = 1;
-
             // Parcourir les lignes suivantes
             for (CSVRecord csvRecord : csvParser) {
                 Reservation reservation = new Reservation();
-                // Utiliser les noms d'en-têtes pour peupler l'objet Reservation
-                reservation.setRef(String.format("r%03d", refCounter));  // Créer la référence avec un format à 3 chiffres
-                refCounter++;  // Incrémenter le compteur pour la prochaine réservation
+                reservation.setRef(csvRecord.get("ref"));  // Utiliser la ref du CSV
 
                 reservation.setWorkspace(workspaceRepository.findByName(csvRecord.get("espace")));
                 reservation.setClient(clientRepository.findByNumber(csvRecord.get("client")));
@@ -176,25 +186,30 @@ public class Reservation {
                 reservation.setStatus(ReservationStatus.valueOf("A_PAYER"));
 
                 // Traiter les options (ex: "opt1, opt3")
-                String optionsColumn = csvRecord.get("option");  // Colonne des options
+                String optionsColumn = csvRecord.get("option");
                 List<ReservationOption> reservationOptions = new ArrayList<>();
 
                 if (optionsColumn != null && !optionsColumn.isBlank()) {
                     for (String optionName : optionsColumn.split(",")) {
-                        Option option = optionRepository.findByCode(optionName.trim().toUpperCase()); // Trouver l'option par code
+                        Option option = optionRepository.findByCode(optionName.trim().toUpperCase());
                         if (option != null) {
-                            reservationOptions.add(new ReservationOption(reservation, option)); // Ajouter l'option à la liste
+                            reservationOptions.add(new ReservationOption(reservation, option));
                         }
                     }
                 }
 
-                reservation.setOptions(reservationOptions); // Assigner la liste (vide si aucune option valide)
-
-                reservations.add(reservation);  // Ajouter la réservation à la liste
+                reservation.setOptions(reservationOptions);
+                reservations.add(reservation);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        // Trier la liste des réservations par ref
+        reservations.sort(Comparator.comparing(Reservation::getRef));
+
         return reservations;
     }
+
+
 }

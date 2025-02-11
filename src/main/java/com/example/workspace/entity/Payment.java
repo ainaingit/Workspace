@@ -131,7 +131,7 @@ public class Payment {
 
                     // On définit les autres champs (mode_payment, statut) comme souhaité
                     payment.setMode_payment("Non défini");  // Tu peux ajouter une logique ici si nécessaire
-                    payment.setStatut("EN_ATTENTE");  // On définit le statut par défaut
+                    payment.setStatut(String.valueOf(reservationRepository.findByRef(columns[1].trim()).getStatus()));  // On définit le statut par défaut
                     payment.setRef_reservation(columns[1].trim());
                     payment.setReservation(reservationRepository.findByRef(columns[1].trim()));
                     // Ajouter à la liste

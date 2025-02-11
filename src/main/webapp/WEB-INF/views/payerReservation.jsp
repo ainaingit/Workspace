@@ -10,7 +10,7 @@
     <h2 class="text-center mb-4">Paiement de la réservation</h2>
     <div class="card shadow-sm p-4">
         <!-- Détails de la réservation -->
-        <h4 class="mb-3">Réservation ID : ${reservationDetails.reservationId}</h4>
+        <!--  <h4 class="mb-3">Réservation ID : ${reservationDetails.reservationId}</h4> -->
         <p><strong>Date de réservation :</strong> ${reservationDetails.reservationDate}</p>
         <p><strong>Heure de début :</strong> ${reservationDetails.startHour}</p>
         <p><strong>Heure de fin :</strong> ${reservationDetails.endHour}</p>
@@ -29,7 +29,7 @@
 
             <!-- Input pour saisir le montant -->
             <div class="mb-3">
-                <label for="mode" class="form-label">Montant à payer (€)</label>
+                <label for="mode" class="form-label">Reference ex : mvola , orange , temla , yas (€)</label>
                 <input type="text" step="0.01" class="form-control" id="mode" name="mode" required>
             </div>
 
