@@ -73,6 +73,7 @@
         <table class="table table-bordered table-striped text-center">
             <thead class="table-dark">
             <tr>
+                <th>Rang</th> <!-- Nouvelle colonne pour le rang -->
                 <th>Créneau Horaire</th>
                 <th>Nombre de Réservations</th>
             </tr>
@@ -82,10 +83,10 @@
                 // Récupération de la liste envoyée dans le modèle
                 List<DiviseHours> listeDiviseHours = (List<DiviseHours>) request.getAttribute("diviseHours");
                 if (listeDiviseHours != null) {
-                    for (int i = 0; i < listeDiviseHours.size(); i++) {
-                        DiviseHours entry = listeDiviseHours.get(i);
+                    for (DiviseHours entry : listeDiviseHours) {
             %>
             <tr>
+                <td><%= entry.getRank() %></td> <!-- Affichage du rang -->
                 <td><%= entry.getHour_slot() %></td>
                 <td><%= entry.getReservations_count() %></td>
             </tr>
@@ -96,6 +97,9 @@
             </tbody>
         </table>
     </div>
+    <!-- Affichage du nombre de créneaux -->
+    <p class="text-center">Nombre total de créneaux horaires : <%= listeDiviseHours != null ? listeDiviseHours.size() : 0 %></p>
+
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

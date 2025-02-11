@@ -75,7 +75,7 @@
 <!-- Sidebar -->
 <div class="sidebar">
     <h3 class="text-center text-white">Menu</h3>
-    <a href="/client/espaces-travail" class="btn btn-custom">Espaces de Travail</a>
+    <a href="/client-dashboard" class="btn btn-custom">Espaces de Travail</a>
     <a href="/mesreservation" class="btn btn-custom">Mes Réservations</a>
 </div>
 
@@ -103,6 +103,7 @@
             <%
                 List<ReservationDetails> reservations = (List<ReservationDetails>) request.getAttribute("reservations");
                 for (ReservationDetails res : reservations) {
+                    String status = res.getStatus();
             %>
             <tr>
                 <td><%= res.getReservationId() %></td>
@@ -113,17 +114,26 @@
                 <td><%= res.getWorkspaceName() %></td>
                 <td><%= res.getOptionsNames() %></td>
                 <td><%= res.getTotalAmount() %> €</td>
-                <td><%= res.getStatus() %></td>
                 <td>
-                    <!-- Formulaire pour le paiement -->
+                    <% if ("PAYE".equals(status)) { %>
+                    <span class="badge bg-success">Déjà payé</span>
+                    <% } else if ("EN_ATTENTE".equals(status)) { %>
+                    <span class="badge bg-warning text-dark">En attente</span>
+                    <% } %>
+                </td>
+                <td>
+                    <% if (!"PAYE".equals(status) && !"EN_ATTENTE".equals(status)) { %>
+                    <!-- Bouton Payer -->
                     <form action="/payerReservation" method="post">
                         <input type="hidden" name="reservationId" value="<%= res.getReservationId() %>">
                         <button type="submit" class="btn btn-custom">Payer</button>
                     </form>
+                    <!-- Bouton Annuler -->
                     <form action="/annulerReservation" method="post">
                         <input type="hidden" name="reservationId" value="<%= res.getReservationId() %>">
                         <button type="submit" class="btn btn-danger mt-2">Annuler</button>
                     </form>
+                    <% } %>
                 </td>
             </tr>
             <% } %>
@@ -131,6 +141,18 @@
         </table>
     </div>
 </div>
+
+<!-- Si un message est présent dans le modèle, afficher une alerte -->
+<%
+    String message = (String) request.getAttribute("message");
+    if (message != null) {
+%>
+<script>
+    alert("<%= message %>");
+</script>
+<%
+    }
+%>
 
 <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>

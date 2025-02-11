@@ -1,3 +1,5 @@
+<%@ page contentType="text/html; charset=UTF-8" %>
+
 <%@ page import="com.example.workspace.vue.ChiffreAffaireParJour" %>
 <%@ page import="java.util.List" %>
 <%@ page import="com.example.workspace.vue.ChiffreAffaireTotal" %>
@@ -111,7 +113,7 @@
         </div>
         <div class="col-md-4">
             <div class="stat-box">
-                <h4>Chiffre d'Affaire Moyen</h4>
+                <h4>Montant A payer </h4>
                 <p><%= chiffreAffaireTotal.getMontantAPayer() %> €</p>
             </div>
         </div>
@@ -123,9 +125,7 @@
             <div class="col-md-5">
                 <input type="date" class="form-control" name="startDate" placeholder="Date de début" required>
             </div>
-            <div class="col-md-5">
-                <input type="date" class="form-control" name="endDate" placeholder="Date de fin" required>
-            </div>
+
             <div class="col-md-2">
                 <button type="submit" class="btn btn-primary w-100">Filtrer</button>
             </div>
@@ -139,6 +139,8 @@
             <tr>
                 <th>Date</th>
                 <th>Chiffre d'Affaire</th>
+                <th>Montant payé</th>
+                <th>Montant a payer</th>
             </tr>
             </thead>
             <tbody>
@@ -148,7 +150,9 @@
             %>
             <tr>
                 <td><%= chiffreAffaire.getDatePaiement() %></td>
-                <td><%= chiffreAffaire.getChiffreAffaire() %> €</td>
+                <td><%= chiffreAffaire.getChiffreAffaireTotal() %> €</td>
+                <td><%= chiffreAffaire.getChiffreAffairePayes() %> €</td>
+                <td><%= chiffreAffaire.getChiffreAffaireNonPayes() %> €</td>
             </tr>
             <%
                 }
@@ -166,9 +170,11 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Récupérer les données de chiffre d'affaire et de dates depuis la page JSP
+    // Récupérer les données de chiffre d'affaire, montant payé, et montant à payer depuis la page JSP
     const labels = <%= listeChiffreAffaire.stream().map(chiffreAffaire -> "\"" + chiffreAffaire.getDatePaiement() + "\"").collect(java.util.stream.Collectors.toList()) %>;
-    const data = <%= listeChiffreAffaire.stream().map(chiffreAffaire -> chiffreAffaire.getChiffreAffaire()).collect(java.util.stream.Collectors.toList()) %>;
+    const dataChiffreAffaire = <%= listeChiffreAffaire.stream().map(chiffreAffaire -> chiffreAffaire.getChiffreAffaireTotal()).collect(java.util.stream.Collectors.toList()) %>;
+    const dataPayes = <%= listeChiffreAffaire.stream().map(chiffreAffaire -> chiffreAffaire.getChiffreAffairePayes()).collect(java.util.stream.Collectors.toList()) %>;
+    const dataAPayer = <%= listeChiffreAffaire.stream().map(chiffreAffaire -> chiffreAffaire.getChiffreAffaireNonPayes()).collect(java.util.stream.Collectors.toList()) %>;
 
     // Créer l'histogramme avec Chart.js
     const ctx = document.getElementById('chiffreAffaireChart').getContext('2d');
@@ -176,13 +182,29 @@
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{
-                label: 'Chiffre d\'Affaire par Jour',
-                data: data,
-                backgroundColor: 'rgba(54, 162, 235, 0.6)',  // Couleur des barres
-                borderColor: 'rgba(54, 162, 235, 1)',    // Bordure des barres
-                borderWidth: 1
-            }]
+            datasets: [
+                {
+                    label: 'Chiffre d\'Affaire',
+                    data: dataChiffreAffaire,
+                    backgroundColor: 'rgba(54, 162, 235, 0.6)',  // Couleur des barres
+                    borderColor: 'rgba(54, 162, 235, 1)',    // Bordure des barres
+                    borderWidth: 1
+                },
+                {
+                    label: 'Montant Payé',
+                    data: dataPayes,
+                    backgroundColor: 'rgba(75, 192, 192, 0.6)',  // Couleur des barres
+                    borderColor: 'rgba(75, 192, 192, 1)',    // Bordure des barres
+                    borderWidth: 1
+                },
+                {
+                    label: 'Montant à Payer',
+                    data: dataAPayer,
+                    backgroundColor: 'rgba(255, 99, 132, 0.6)',  // Couleur des barres
+                    borderColor: 'rgba(255, 99, 132, 1)',    // Bordure des barres
+                    borderWidth: 1
+                }
+            ]
         },
         options: {
             responsive: true,
@@ -196,7 +218,7 @@
                 y: {
                     title: {
                         display: true,
-                        text: 'Chiffre d\'Affaire'
+                        text: 'Montant (€)'
                     },
                     beginAtZero: true
                 }

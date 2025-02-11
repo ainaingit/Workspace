@@ -12,17 +12,17 @@ import java.util.List;
 
 @Repository
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
-
     @Query("SELECT r FROM Reservation r WHERE r.date = :date " +
-            "AND (r.startHour BETWEEN :startTime AND :endTime " +
-            "OR r.endHour BETWEEN :startTime AND :endTime " +
-            "OR :startTime BETWEEN r.startHour AND r.startHour " +
-            "OR :endTime BETWEEN r.startHour AND r.endHour)")
+            "AND r.workspace.id = :workspaceId " +
+            "AND (r.startHour < :endTime AND r.endHour > :startTime)")
     List<Reservation> findConflictingReservations(@Param("date") LocalDate date,
                                                   @Param("startTime") LocalTime startTime,
-                                                  @Param("endTime") LocalTime endTime);
+                                                  @Param("endTime") LocalTime endTime,
+                                                  @Param("workspaceId") Long workspaceId);
 
     List<Reservation> findByDate(LocalDate date);
 
     Reservation findTopByOrderByRefDesc();
+
+    Reservation findByRef(String ref);
 }

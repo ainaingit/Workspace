@@ -1,5 +1,6 @@
 package com.example.workspace.entity;
 
+import com.example.workspace.repository.ReservationRepository;
 import jakarta.persistence.*;
 
 import java.io.BufferedReader;
@@ -110,7 +111,7 @@ public class Payment {
     }
 
     // Fonction pour importer les données CSV et créer une liste de paiements
-    public static List<Payment> importCsv(InputStream inputStream) {
+    public static List<Payment> importCsv(InputStream inputStream, ReservationRepository reservationRepository) {
         List<Payment> payments = new ArrayList<>();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
@@ -130,8 +131,9 @@ public class Payment {
 
                     // On définit les autres champs (mode_payment, statut) comme souhaité
                     payment.setMode_payment("Non défini");  // Tu peux ajouter une logique ici si nécessaire
-                    payment.setStatut("EN_ATTENTE");  // On définit le statut par défaut
+                    payment.setStatut(String.valueOf(reservationRepository.findByRef(columns[1].trim()).getStatus()));  // On définit le statut par défaut
                     payment.setRef_reservation(columns[1].trim());
+                    payment.setReservation(reservationRepository.findByRef(columns[1].trim()));
                     // Ajouter à la liste
                     payments.add(payment);
                 }

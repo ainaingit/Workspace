@@ -12,11 +12,11 @@ SELECT
     r.start_hour AS start_hour,
     (r.start_hour + INTERVAL '1 hour' * r.duration) AS end_hour,  -- Calcul de l'heure de fin
     r.duration AS duration,
-    (w.price + COALESCE(SUM(o.price), 0)) AS total_amount,
+    (w.price * r.duration + COALESCE(SUM(o.price * r.duration), 0)) AS total_amount,  -- Correction ici
     r.status AS status,
-    STRING_AGG(o.name, ', ' ORDER BY o.name) AS options_names,
+    COALESCE(STRING_AGG(o.name, ', ' ORDER BY o.name), 'Aucune option') AS options_names,  -- Liste des options sous forme de texte
     r.client_id AS client_id,
-    w.name AS workspace_name  -- Ajout du nom de l'espace de travail
+    w.name AS workspace_name  -- Nom de l'espace de travail
 FROM
     reservation r
         JOIN workspace w ON r.workspace_id = w.id
@@ -25,14 +25,14 @@ FROM
 GROUP BY
     r.id, r.date, r.start_hour, r.duration, w.price, r.status, r.client_id, w.name;
 
-
 /** chiffre d affaire par jour , avec filtre de date **/
 CREATE OR REPLACE VIEW v_chiffre_affaire_par_jour AS
 SELECT
     rd.reservation_date AS date_paiement,
-    SUM(rd.total_amount) AS chiffre_affaire
+    SUM(CASE WHEN rd.status = 'PAYE' THEN rd.total_amount ELSE 0 END) AS chiffre_affaire_payes,
+    SUM(CASE WHEN rd.status != 'PAYE' THEN rd.total_amount ELSE 0 END) AS chiffre_affaire_non_payes,
+    SUM(rd.total_amount) AS chiffre_affaire_total  -- Somme des deux
 FROM reservation_details rd
-WHERE rd.status = 'PAYE'  -- Filtrer uniquement les réservations payées
 GROUP BY rd.reservation_date
 ORDER BY rd.reservation_date;
 
@@ -42,10 +42,14 @@ SELECT * from  v_chiffre_affaire_par_jour ;
 
 CREATE OR REPLACE VIEW vue_chiffre_affaire_total AS
 SELECT
-    SUM(CASE WHEN r.status IN ('FAIT', 'PAYE') THEN r.total_amount ELSE 0 END) AS montant_paye,
-    SUM(CASE WHEN r.status IN ('A_PAYER', 'EN ATTENTE') THEN r.total_amount ELSE 0 END) AS montant_a_payer,
-    SUM(CASE WHEN r.status IN ('FAIT', 'PAYE') THEN r.total_amount ELSE 0 END) +
-    SUM(CASE WHEN r.status IN ('A_PAYER', 'EN ATTENTE') THEN r.total_amount ELSE 0 END) AS chiffre_affaire_total
+    -- Montant payé : Seuls les statuts 'PAYE' sont pris en compte
+    SUM(CASE WHEN r.status = 'PAYE' THEN r.total_amount ELSE 0 END) AS montant_paye,
+
+    -- Montant à payer : Tous les statuts autres que 'PAYE' sont considérés comme à payer
+    SUM(CASE WHEN r.status != 'PAYE' THEN r.total_amount ELSE 0 END) AS montant_a_payer,
+
+    -- Chiffre d'affaires total : Somme des montants payés et non payés
+    SUM(r.total_amount) AS chiffre_affaire_total
 FROM
     reservation_details r;
 
@@ -53,7 +57,6 @@ select * from vue_chiffre_affaire_total;
 
 
 /** savoir le creneau d heure le plus afflient **/
-
 CREATE OR REPLACE VIEW divise_hours AS
 WITH ReservationSlots AS (
     -- Pour chaque réservation, générer les créneaux horaires occupés
@@ -84,10 +87,22 @@ WITH ReservationSlots AS (
                                  '1 hour'::interval
                          ) AS hour_slot_ts
               ) gs
+     ),
+     RankedCounts AS (
+         -- Ajouter un classement basé sur le nombre de réservations
+         SELECT
+             f.hour_slot,
+             COALESCE(h.reservations_count, 0) AS reservations_count,
+             RANK() OVER (ORDER BY COALESCE(h.reservations_count, 0) DESC) AS rank
+         FROM FullHours f
+                  LEFT JOIN HourlyCounts h ON f.hour_slot = h.hour_slot
      )
 SELECT
-    f.hour_slot,
-    COALESCE(h.reservations_count, 0) AS reservations_count
-FROM FullHours f
-         LEFT JOIN HourlyCounts h ON f.hour_slot = h.hour_slot
-ORDER BY f.hour_slot;
+    hour_slot,
+    reservations_count,
+    rank
+FROM RankedCounts
+ORDER BY rank, hour_slot;  -- Trier d'abord par rang, puis par créneau horaire
+
+
+TRUNCATE TABLE reservation_option, reservation, option, workspace, client,payment RESTART IDENTITY CASCADE;

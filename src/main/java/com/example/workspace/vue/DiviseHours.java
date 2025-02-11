@@ -6,14 +6,15 @@ import jakarta.persistence.Table;
 import org.hibernate.annotations.Immutable;
 
 @Entity
-@Table(name = "devise_hours")
-@Immutable  // Pour indiquer que cette entité est en lecture seule (vue)
+@Table(name = "divise_hours")
+@Immutable // Pour indiquer que cette vue est en lecture seule
 public class DiviseHours {
 
     @Id
     private String hour_slot; // Par exemple "08:00", "09:00", etc.
 
     private int reservations_count;
+    private int rank; // Nouveau champ pour le classement
 
     // Getters et Setters
     public String getHour_slot() {
@@ -30,5 +31,13 @@ public class DiviseHours {
 
     public void setReservations_count(int reservations_count) {
         this.reservations_count = reservations_count;
+    }
+
+    public int getRank() {
+        return rank;
+    }
+
+    public void setRank(int rank) {
+        this.rank = rank;
     }
 }

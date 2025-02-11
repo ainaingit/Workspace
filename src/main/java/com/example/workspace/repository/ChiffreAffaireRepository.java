@@ -11,5 +11,5 @@ import java.util.List;
 public interface ChiffreAffaireRepository extends JpaRepository<ChiffreAffaireParJour, LocalDate> {
 
     // Filtrer par date (si nécessaire)
-    List<ChiffreAffaireParJour> findByDatePaiementBetween(LocalDate start, LocalDate end);
+    List<ChiffreAffaireParJour> findByDatePaiement(LocalDate start);
 }
