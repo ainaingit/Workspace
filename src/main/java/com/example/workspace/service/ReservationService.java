@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -43,7 +44,13 @@ public class ReservationService {
         List<Client> clients = clientRepository.findAll();
         Long clientId = (Long) session.getAttribute("clientId");
         Client client = clientRepository.getById(clientId);
+        LocalDate date =LocalDate.parse(selectedDate);
+        // azoko amty ny reservation amnio date io sy amle espac eio
+        List<Reservation> liste  = reservationRepository.findByDateAndWorkspaceId(date,workspaceId);
 
+        // amty no azaoko ny somme an ny reservatin amnio date sy workspace_id io
+        int value  = reservationRepository.SumdurationByDateAndWorkspaceId(date, workspaceId);
+        model.addAttribute("sumDuration", value);
         model.addAttribute("workspaceId", workspaceId);
         model.addAttribute("workspaceName", workspaceName);
         model.addAttribute("selectedDate", selectedDate);  // Ajouter la date sélectionnée au modèle
@@ -55,61 +62,90 @@ public class ReservationService {
         return "reservation";  // Redirige vers la page de réservation
     }
     // Vérifier si la réservation dépasse l'heure de fermeture et doit être partagée
+    // Vérifier si la réservation dépasse l'heure de fermeture et doit être partagée
     private boolean isReservationSplitRequired(LocalTime startTime, int duration) {
         LocalTime endTime = startTime.plusHours(duration);
-        // Si l'heure de fin dépasse 19h, la réservation doit être partagée
-        return endTime.isAfter(LocalTime.of(19, 0));
+
+        // Si l'heure de fin est inférieure à l'heure de début, cela signifie qu'on est passé au jour suivant
+        boolean crossesMidnight = endTime.isBefore(startTime);
+
+        return endTime.isAfter(LocalTime.of(19, 0)) || crossesMidnight;
     }
+
 
     private List<Reservation> splitReservation(Reservation originalReservation) {
         List<Reservation> splitReservations = new ArrayList<>();
-        LocalTime originalEndTime = originalReservation.getStartHour().plusHours(originalReservation.getDuration());
-        LocalTime splitEndTime = LocalTime.of(19, 0);
+        LocalTime splitEndTime = LocalTime.of(19, 0);  // Fin de journée 19h00
+        LocalTime nextDayStartTime = LocalTime.of(8, 0); // Début du lendemain 08h00
+        LocalTime midnight = LocalTime.MIDNIGHT; // 00:00
 
-        // Si l'heure de fin dépasse 19h, il faut diviser la réservation
-        while (originalEndTime.isAfter(splitEndTime)) {
-            // Créer la première partie jusqu'à 19h
-            Reservation firstPart = new Reservation(
-                    originalReservation.getDate(),
-                    originalReservation.getStartHour(),
-                    (int) java.time.Duration.between(originalReservation.getStartHour(), splitEndTime).toHours(),
-                    originalReservation.getWorkspace(),
-                    originalReservation.getReserveur(),
-                    originalReservation.getClient()
-            );
-            splitReservations.add(firstPart);  // Ajouter la première partie à la liste
+        LocalDate currentDate = originalReservation.getDate();
+        LocalTime currentStartHour = originalReservation.getStartHour();
+        int remainingDuration = originalReservation.getDuration();
 
-            // Créer la seconde partie pour le lendemain matin à 8h
-            LocalTime startSecondPart = LocalTime.of(8, 0);
-            LocalTime endSecondPart = startSecondPart.plusHours(originalReservation.getDuration() - (int) java.time.Duration.between(originalReservation.getStartHour(), splitEndTime).toHours());
+        while (remainingDuration > 0) {
+            LocalTime endTime = currentStartHour.plusHours(remainingDuration);
 
-            // Si la durée restante est toujours plus de 19h, répéter le processus
-            originalReservation = new Reservation(
-                    originalReservation.getDate().plusDays(1),  // La date est décalée au lendemain
-                    startSecondPart,
-                    (int) java.time.Duration.between(startSecondPart, endSecondPart).toHours(),
-                    originalReservation.getWorkspace(),
-                    originalReservation.getReserveur(),
-                    originalReservation.getClient()
-            );
-            originalEndTime = originalReservation.getStartHour().plusHours(originalReservation.getDuration()); // Recalcule l'heure de fin de la nouvelle réservation
+            // Si l'heure de fin dépasse minuit, il faut couper
+            if (endTime.isAfter(midnight) && currentStartHour.isBefore(midnight)) {
+                int durationBeforeMidnight = (int) Duration.between(currentStartHour, midnight).toHours();
+                int durationAfterMidnight = remainingDuration - durationBeforeMidnight;
+
+                // Ajouter la réservation jusqu'à minuit
+                splitReservations.add(new Reservation(
+                        currentDate,
+                        currentStartHour,
+                        durationBeforeMidnight,
+                        originalReservation.getWorkspace(),
+                        originalReservation.getReserveur(),
+                        originalReservation.getClient()
+                ));
+
+                // Mise à jour pour le lendemain
+                currentDate = currentDate.plusDays(1);
+                currentStartHour = nextDayStartTime;
+                remainingDuration = durationAfterMidnight;
+            }
+
+            // Si l'heure de fin dépasse 19h00 mais ne va pas jusqu'à minuit
+            else if (endTime.isAfter(splitEndTime)) {
+                int durationBeforeEndOfDay = (int) Duration.between(currentStartHour, splitEndTime).toHours();
+                int durationAfterEndOfDay = remainingDuration - durationBeforeEndOfDay;
+
+                // Ajouter la réservation jusqu'à 19h00
+                splitReservations.add(new Reservation(
+                        currentDate,
+                        currentStartHour,
+                        durationBeforeEndOfDay,
+                        originalReservation.getWorkspace(),
+                        originalReservation.getReserveur(),
+                        originalReservation.getClient()
+                ));
+
+                // Mise à jour pour le lendemain
+                currentDate = currentDate.plusDays(1);
+                currentStartHour = nextDayStartTime;
+                remainingDuration = durationAfterEndOfDay;
+            }
+
+            // Sinon, la réservation est correcte et ne nécessite pas de split
+            else {
+                splitReservations.add(new Reservation(
+                        currentDate,
+                        currentStartHour,
+                        remainingDuration,
+                        originalReservation.getWorkspace(),
+                        originalReservation.getReserveur(),
+                        originalReservation.getClient()
+                ));
+                remainingDuration = 0;
+            }
         }
 
-        // Ajouter la dernière partie si elle ne dépasse pas 19h
-        if (originalEndTime.isBefore(splitEndTime)) {
-            Reservation lastPart = new Reservation(
-                    originalReservation.getDate(),
-                    originalReservation.getStartHour(),
-                    (int) java.time.Duration.between(originalReservation.getStartHour(), originalEndTime).toHours(),
-                    originalReservation.getWorkspace(),
-                    originalReservation.getReserveur(),
-                    originalReservation.getClient()
-            );
-            splitReservations.add(lastPart);  // Ajouter la dernière partie
-        }
-
-        return splitReservations;  // Retourner toutes les réservations split
+        return splitReservations;
     }
+
+
 
 
 
@@ -168,7 +204,7 @@ public class ReservationService {
                     }
 
                     model.addAttribute("reussite", "Réservation réussie !");
-                    System.out.println("nety le izy ");
+                    System.out.println("Réservation réussie !");
                     return "reservationConfirmation";  // Affiche la confirmation après enregistrement
                 } else {
                     // Si un créneau est déjà occupé, afficher l'erreur

@@ -37,7 +37,8 @@
                 return false;
             }
 
-            if (duration < 1 ) {
+            // Validation de la durée entre 1 et 16 heures
+            if (duration < 1 || duration >4 ) {
                 alert("La durée doit être comprise entre 1 et 4 heures.");
                 document.getElementById("duration").focus();
                 return false;
@@ -50,6 +51,10 @@
     </script>
 </head>
 <body>
+<%
+    int duration  = (int) request.getAttribute("sumDuration");
+%>
+<h1> efa reserver pendant <%= duration%> io androany </h1>
 <div class="container mt-5">
     <h2 class="text-center mb-4">Réserver un espace de travail</h2>
     <p class="text-center">Vous réservez l'espace <strong>${workspaceName}</strong></p>
@@ -103,9 +108,10 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="duration">Durée (en heures, entre 1 et 4)</label>
-                    <input type="number" id="duration" name="duration" class="form-control" min="1" max="4" required placeholder="1 à 4 heures">
+                    <label for="duration">Durée (en heures, entre 1 et 16)</label>
+                    <input type="number" id="duration" name="duration" class="form-control" min="1" max="4" required placeholder="Durée en heures (1-16)">
                 </div>
+
 
                 <div class="form-group">
                     <label>Options supplémentaires :</label>

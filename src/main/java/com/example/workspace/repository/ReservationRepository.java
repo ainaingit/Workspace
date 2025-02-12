@@ -20,6 +20,11 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                                                   @Param("endTime") LocalTime endTime,
                                                   @Param("workspaceId") Long workspaceId);
 
+    List<Reservation> findByDateAndWorkspaceId(LocalDate date, Long workspaceId);
+
+    @Query("SELECT sum(r.duration ) FROM Reservation r WHERE r.date = :date " +
+            "AND r.workspace.id = :workspaceId ")
+    int SumdurationByDateAndWorkspaceId(LocalDate date, Long workspaceId);
     List<Reservation> findByDate(LocalDate date);
 
     Reservation findTopByOrderByRefDesc();
